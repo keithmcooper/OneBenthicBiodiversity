@@ -1,15 +1,29 @@
 ################################################################################
-################################################################################
-####                                                                        ####
 ####            MAPPING BENTHIC BIODIVERSITY TO FACILITATE FUTURE           ####
-####              SUSTAINABLE DEVELOPMENT (JOURNAL?)                        ####
-####                                                                        ####
-################################################################################
+####              SUSTAINABLE DEVELOPMENT (ECOSPHERE)                       ####
 ################################################################################
 
-# Data used in the script is sourced from the OneBenthic
-# database using sql queries. For users without access to this database, data
-# can be sourced from https://doi.org/10.14466/CefasDataHub.137
+## This script relates to the work in Cooper, K.M., Thompson, M.S.A., Bolam, S.G.,
+# Peach, C.M., Webb, T.J., Downie, A-L. Mapping benthic biodiversity to facilitate
+# future sustainable development. Ecosphere.
+
+# Data used in the script is sourced from the OneBenthic 
+# (https://rconnect.cefas.co.uk/onebenthic_portal/) database using sql 
+# queries. For users without direct access to this database, data
+# can be sourced using either OneBenthic APIs:
+# Faunal data: https://rconnect.cefas.co.uk/onebenthic_api_1/__docs__/)
+# Sediment data: https://rconnect.cefas.co.uk/onebenthic_api_3/__docs__/
+# or using the OneBenthic Data Extraction tool: Grab/Core
+# (https://rconnect.cefas.co.uk/onebenthic_dataextractiongrabcore/)
+
+# This script includes code for running Random Forest models (a quick looksee),
+# but the accompanying file .R should be used for final modelling.
+
+# Input data files for modelling are produced in this script and include:
+# biodiv_metrics_4_modelling.csv (BIODIV METRICS)
+# biodiv_metric_rare_4_modelling.csv (RARE TAXA)
+# biodiv_cluster_4_modelling.csv (BIODIV CLUSTERS)
+
 #_______________________________________________________________________________
 #### GET DATA ####
 
@@ -181,9 +195,9 @@ write.csv(data, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSp
 #_______________________________________________________________________________
 #### SAMPLE LOCATIONS (FIGURE 1)  ####
 
-## Load libraries
+## Load packages
 library(sf)
-library(rasterVis)# use raster in ggplot
+library(rasterVis)# to use raster in ggplot
 library(raster)
 library(ggnewscale)
 library(scales)
@@ -191,7 +205,7 @@ library(ggplot2)
 library(dplyr)
 library(shadowtext)
 
-## Load countries polygon and Norther Ireland border
+## Load countries polygon and Northern Ireland border
 countries <- st_read(file.path("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\EuropeLiteScoWal.shp"))
 ni_border <- st_read(file.path("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\ni_border.shp"))
 
@@ -255,9 +269,10 @@ PSam2=ggplot()+
   annotate("text",x=c(6.3),y=c(54.5),label=c("German Bight"),color="white", size=5)+
   annotate("text",x=c(4.3),y=c(54.3),label=c("Oyster Ground"),color="white", size=5)+
   annotate("text",x=c(2.9),y=c(51.9),label=c("Southern \nBight"),color="white", size=5)+
-  annotate("text",x=c(0),y=c(58.5),label=c("Fladden Ground"),color="white", size=5)+
+  annotate("text",x=c(0),y=c(58.5),label=c("Fladen Ground"),color="white", size=5)+
   annotate("text",x=c(2.33),y=c(54.9),label=c("Dogger Bank"),color="white", size=5)+
   annotate("text",x=c(5.6),y=c(58.3),label=c("Norwegian Trench"),color="white", size=5, angle = -40)+
+  annotate("text",x=c(8.8),y=c(58),label=c("Skagerrak"),color="white", size=5, angle = 40)+
   annotate("text",x=c(-1),y=c(56.5),label=c("Scalp \nBank"),color="white", size=5)+
   annotate("text",x=c(3),y=c(58),label=c("Ling Bank"),color="white", size=5)+
   annotate("text",x=c(2.5),y=c(59),label=c("Utsira \nHigh"),color="white", size=5)+
@@ -290,7 +305,7 @@ PSam2=ggplot()+
 
 ## Save Figure 1
 ggsave(plot = PSam2,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_1_new.png"),
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_1.png"),
        width = 41,height = 40,units = "cm", pointsize = 48,
        device = "png",limitsize = FALSE,bg="white")
 #_______________________________________________________________________________
@@ -305,10 +320,10 @@ pkgs = c("geosphere", "lubridate", "sf", "tidyverse",
 ## Loading specified packages
 invisible(lapply(pkgs, library, character.only = TRUE))
 
-# path to store results
+## Path to store results
 outpath = 'C:/Users/KMC00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/diversity_estimates/'
 
-## Converting the dataframe into a tibble and renaming
+## Converting dataframe to tibble and rename
 sppdf <- as_tibble(data)
 
 ## Set parameters for diversity assessment
@@ -320,7 +335,7 @@ years=sort(unique(sppdf$year))# years to be assessed
 no_cores <- detectCores() - 4# Calculate the number of cores for parallel processing
 file_name='one_benthic_10_24'# file name for saving
 
-# Load functions
+## Load functions
 source("C:/Users/KMC00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/R/diversity_functions_MT.R")
 
 # Running the data tidying function for desired years 
@@ -345,6 +360,7 @@ load(paste0(outpath, 'biodiversity_estimates_1985_2023_one_benthic_10_24.Rdata')
 library(mapplots)
 library(RColorBrewer)
 library(ggpubr)
+library(dplyr)
 
 ## World map
 world_shp = sf::st_as_sf(maps::map("world", plot = FALSE, fill = TRUE))
@@ -405,14 +421,12 @@ sp_div_plts
 #_______________________________________________________________________________
 #### BIODIV METRICS: ADD COUNTS DATA AND SAVE ####
 
-
 ## Add total count information. Sub-setting (outlier removal) code not used as issue addressed later in code 
-# justification for subsetting
+# justification for subsetting:
 # alpha cutoff close to alpha_n (i.e. where all individuals are singletons), yielding unreliable estimates (these could be plot in supporting material?)
 # beta and gamma estimate only used where n_samp == 6
 # beta diversity >14 would represent >100% turnover, hence removed
 # hill nos should be 0>1>2 
-
 
 final_df = counts %>%
   rename(sample=samplecode) %>%
@@ -431,7 +445,6 @@ final_df = counts %>%
          g_q2 = case_when(is.na(sample_a_q2) | is.na(b_q2) | n_samp <6 ~ NA, TRUE ~ g_q2),
          assemblage = file_name)
  
-
 ## Check max values
 max(final_df$sample_a_q0, na.rm=T)
 colnames(final_df)
@@ -479,26 +492,26 @@ biodiv8$metric <- as.factor(biodiv8$metric)
 
 ## Inspect data
 head(biodiv8)
-View(biodiv8)
+#View(biodiv8)
 
 ## Create a tally of all values in the 'metric' column
 biodiv8 %>%
   filter(!is.na(measurement)) %>%
   count(metric)
 
-#   metric     n
-#     av_count 35519
-#         b_q0 35348
-#         b_q1 32195
-#         b_q2 28094
-#     cv_count 35519
-#         g_q0 35348
-#         g_q1 29277
-#         g_q2 25770
-#  sample_a_q0 35519
-# sample_a_q1 32193
-# sample_a_q2 32178
-#   tot_count 35519
+#        metric     n
+#1         b_q0 35348
+#2         b_q1 32195
+#3         b_q2 28094
+#4        count 37909
+#5     cv_count 35519
+#6         g_q0 35348
+#7         g_q1 29277
+#8         g_q2 25770
+#9  sample_a_q0 35519
+#10 sample_a_q1 32193
+#11 sample_a_q2 32178
+#12   tot_count 35519
 
 #_______________________________________________________________________________
 #### PREPARE BIODIV METRICS DATA: REMOVE 'REPLICATES' TO ADDRESS SPATIAL AUTOCORRELATION ####
@@ -628,11 +641,21 @@ ggplot(data=biodiv9_mod,aes(x=measurement))+
 #biodiv9 <- biodiv8
 #biodiv9_mod <- biodiv9
 #_______________________________________________________________________________
-#### SAVE BIODIV METRICSMETRIC DATA FOR MODELLING ####
+#### SAVE BIODIV METRICS DATA FOR MODELLING ####
+
+## Reorder columns
 biodiv9_mod2 <- biodiv9_mod[,c(3,1,2,4,5)]
+
+## Change type
 biodiv9_mod2$type <- 'numeric'
+
+## Add paper(to help manage modelling tasks)
 biodiv9_mod2$paper <- 'biodiversity'
+
+## Update column names
 colnames(biodiv9_mod2) <- c('sample','x','y','metric','value','type','paper')
+
+## Reorder columns
 biodiv9_mod2 <- biodiv9_mod2[,c(7,1:4,6,5)]
 head(biodiv9_mod2)
 
@@ -642,25 +665,30 @@ biodiv9_mod2 %>%
   count(metric)
 
 #        metric     n
-#        count 20508
-#         b_q0 21562
-#         b_q1 19526
-#         b_q2 17171
-#     cv_count 21679
-#         g_q0 21754
-#         g_q1 17648
-#         g_q2 15616
-#  sample_a_q0 21829
-# sample_a_q1 19469
-# sample_a_q2 19288
-#   tot_count 20322
-dim(biodiv9_mod2)
+#1         b_q0 21562
+#2         b_q1 19526
+#3         b_q2 17171
+#4        count 20508
+#5     cv_count 21679
+#6         g_q0 21754
+#7         g_q1 17648
+#8         g_q2 15616
+#9  sample_a_q0 21829
+#10 sample_a_q1 19469
+#11 sample_a_q2 19288
+#12   tot_count 20322
+
+dim(biodiv9_mod2)# 236372      7
+
+## Save metric data for use with RF modelling script (see xx.R)
 write.csv(biodiv9_mod2, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\biodiv_metrics_4_modelling.csv", row.names=FALSE)
 #_______________________________________________________________________________
 #### PREPARE BIODIV METRICS DATA FOR CLUSTERING: REMOVE ROWS WITH MISSING DATA ####
 
-## Change data into wide format
+## Load package
 library(tidyr)
+
+## Change data into wide format
 biodiv9_wide <- spread(biodiv9, metric, measurement)
 head(biodiv9_wide)
 dim(biodiv9_wide)#22661    15
@@ -699,20 +727,16 @@ biodiv9_wide$sample_a_q0_none=biodiv9_wide$sample_a_q0#0.227
 biodiv9_wide$sample_a_q1_sqrt=sqrt(biodiv9_wide$sample_a_q1)#0.627
 biodiv9_wide$sample_a_q2_sqrt=sqrt(biodiv9_wide$sample_a_q2)#0.778
 biodiv9_wide$b_q0_sqrt=sqrt(biodiv9_wide$b_q0)#0.570
-#biodiv9_wide$b_q1_sqrt=sqrt(biodiv9_wide$b_q1)#
-#biodiv9_wide$b_q2_sqrt=sqrt(biodiv9_wide$b_q2)#
 biodiv9_wide$b_q1_none=biodiv9_wide$b_q1#0.465
 biodiv9_wide$b_q2_none=biodiv9_wide$b_q2#0.160
-#biodiv9_wide$g_q0_none=biodiv9_wide$g_q0#
 biodiv9_wide$g_q0_sqrt=sqrt(biodiv9_wide$g_q0)#0.521
 biodiv9_wide$g_q1_sqrt=sqrt(biodiv9_wide$g_q1)#0.501
-#biodiv9_wide$g_q2_none=biodiv9_wide$g_q2#
 biodiv9_wide$g_q2_sqrt=sqrt(biodiv9_wide$g_q2)#0.530
 biodiv9_wide$tot_count_log=log(biodiv9_wide$tot_count)#1.42
 biodiv9_wide$count_log=log(biodiv9_wide$count)#1.22
-#biodiv9_wide$cv_count_sqrt=sqrt(biodiv9_wide$cv_count)#
 biodiv9_wide$cv_count_log=log(biodiv9_wide$cv_count)#1.07
 
+## Inspect data
 head(biodiv9_wide)
 dim(biodiv9_wide)# 13654    27
 
@@ -722,7 +746,6 @@ biodiv9_trans <- biodiv9_wide[,c(16:24,26,27,25)]
 head(biodiv9_trans)
 
 ## Convert to long format
-#biodiv9_trans_long <- gather(biodiv9_trans, metric, measurement, sample_a_q0_none:cv_count_sqrt, factor_key=TRUE)
 biodiv9_trans_long <- gather(biodiv9_trans, metric, measurement, sample_a_q0_none:tot_count_log, factor_key=TRUE)
 head(biodiv9_trans_long)
 
@@ -736,10 +759,7 @@ hist2
 biodiv9_trans2 <- biodiv9_trans %>% 
   mutate(across(1:12, moments::skewness))%>% 
   distinct()
-head(biodiv9_trans2)
-
-## Skewness following transformation (now all =<0.5 )
-
+head(biodiv9_trans2) # Skewness following transformation (now all =<0.5 )
 #_______________________________________________________________________________
 #### PREPARE BIODIV METRICS DATA FOR CLUSTERING: NORMALISATION ####
 
@@ -799,7 +819,6 @@ ggsave(plot = figure_s1,
        device = "png",limitsize = FALSE,bg="white")#width =285
 
 ## Following variables highly correlated:
-
 #1Dα	vs	0Dα	0.892
 #2Dα	vs	0Dα	0.731
 #2Dα	vs	1Dα	0.945
@@ -809,11 +828,10 @@ ggsave(plot = figure_s1,
 #2Dγ	vs	0Dγ	0.964
 #2Dγ	vs	1Dγ	0.992
 
+## Therefore drop 1Dα, 2Dα, 1Dβ, 1Dγ, 2Dγ
+## ie keep 0Dα, 0Dβ, 2Dβ, 0Dγ, N, Nav, Ntot
 
-# Therefore drop 1Dα, 2Dα, 1Dβ, 1Dγ, 2Dγ
-# ie keep 0Dα, 0Dβ, 2Dβ, 0Dγ, N, Nav, Ntot
-
-# Convert to long format
+## Convert to long format
 clus_data <- as.data.frame(biodiv9_trans_scale[,c(1,4,6,7,10,11,12)])
 head(clus_data)
 
@@ -831,21 +849,21 @@ dim(clus_data1)#  13654    10
 #_______________________________________________________________________________
 #### BIODIVERSITY CLUSTERS: ELBOW PLOT (FIGURE 3A) ####
 
-## Load package
-library(factoextra)
-
-## Generate plot
-elbow <- fviz_nbclust(clus4,kmeans, method = "wss",linecolor = "black",k.max = 20)+
-  geom_vline(xintercept = 8, linetype = 2)+theme_classic(base_size = 14)
-plot(elbow)
-#_______________________________________________________________________________
-#### BIODIVERSITY CLUSTERS: DO CLUSTERING ####
-
 ## Subset clustering metrics only
 data_4_clustering2 <- clus_data1[,4:10]
 
-## Change class of df spec6 to a matrix 
+## Change class of df data_4_clustering2 to a matrix 
 clus4=data.matrix(data_4_clustering2)
+
+## Load package
+library(factoextra)
+
+## Generate plot (clus4 comes from below step)
+elbow <- fviz_nbclust(clus4,kmeans, method = "wss",linecolor = "black",k.max = 20)+
+  geom_vline(xintercept = 8, linetype = 2)+theme_classic(base_size = 16)
+plot(elbow)
+#_______________________________________________________________________________
+#### BIODIVERSITY CLUSTERS: DO CLUSTERING ####
 
 ## Perform K-means clustering of data. Results (cluster group) to the object 'results' 
 set.seed(1234) 
@@ -881,8 +899,6 @@ d1 <- dist(as.matrix(d))
 test2 <- d1%>% hclust %>% as.dendrogram %>%set("leaves_pch", 19) %>%  # node point type
   set("leaves_cex", 9) %>%  # node point size
   set("leaves_col", c( 
-
-
 "#C0C1BC",#3
 "#6FD326",#8
 "#37C331",#2
@@ -892,21 +908,23 @@ test2 <- d1%>% hclust %>% as.dendrogram %>%set("leaves_pch", 19) %>%  # node poi
 "#E0F210",#1
 "#D1D189"#7
 )) %>%
-  set("labels_cex",0.8)%>% 
-  set("labels", c('     3', '     8', '     2', '     5', '     4', '     6', '     1', '     7'))%>% 
+  set("labels_cex",0.9)%>% 
+  #set("labels", c('     3', '     8', '     2', '     5', '     4', '     6', '     1', '     7'))%>% 
+  set("labels", c('     Bio-H', '     Bio-B', '     Bio-A', '     Bio-C', '     Bio-E', '     Bio-F', '     Bio-D', '     Bio-G'))%>%
   set("branches_lwd", 0.7)
 
 ## Change dendrogram into a ggplot
 ggd1 <- as.ggdend(test2)
-dendrogram <-  ggplot(ggd1, horiz = T)+theme_classic(base_size = 14)+theme(axis.title.y=element_blank(),
+dendrogram <-  ggplot(ggd1, horiz = T)+theme_classic(base_size = 16)+theme(axis.title.y=element_blank(),
                                                                axis.text.y=element_blank(),
                                                                axis.ticks.y=element_blank(),
                                                               axis.line.y=element_blank())+labs(y='Height')
 dendrogram
 #_______________________________________________________________________________
 #### BIODIVERSITY CLUSTERS: ELBOW & DENDROGRAM (FIGURE 3) ####
-## Combined elbow plot and dendrogram (hashed out otherwise '## png' message displayed in mrkdown)
-png("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_3.png", width = 33, height = 20, units = "cm", res = 800,pointsize = 12)
+
+## Combined elbow plot and dendrogram plots
+png("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_3.png", width = 33, height = 20, units = "cm", res = 500,pointsize = 12)
 ggpubr::ggarrange(elbow,NULL,dendrogram,labels = c("a)","", "b)"),nrow=1,widths = c(1, 0.05, 1))
 dev.off()
 #_______________________________________________________________________________
@@ -916,7 +934,7 @@ dev.off()
 faunal.cluster=cbind(clus_data1[,1:3],results$cluster)
 head(faunal.cluster)
 
-## Change name of col 'results$cluster' to 'ClusterNum' 
+## Change name of col 'results$cluster' to 'FaunalCluster' 
 names(faunal.cluster)[4]<-paste("FaunalCluster") 
 
 ## Make FaunalCluster a factor
@@ -984,7 +1002,7 @@ names(metric.cluster)
 metric.cluster2 <- metric.cluster[,c(30,4:15)]
 head(metric.cluster2)
 
-## Create col 'ClustNum'
+## Create col 'ClusterNum'
 metric.cluster2$ClusterNum <- as.factor(metric.cluster2$FaunalCluster)
 head(metric.cluster2)
 
@@ -1052,7 +1070,6 @@ colnames(zscores4gt3)[2] <- "b_q0"
 colnames(zscores4gt3)[3] <- "b_q2"
 colnames(zscores4gt3)[4] <- "count"
 colnames(zscores4gt3)[5] <- "cv_count"
-#colnames(zscores4gt3)[5] <- "g_q1"
 colnames(zscores4gt3)[6] <- "g_q0"
 colnames(zscores4gt3)[7] <- "a_q0"
 colnames(zscores4gt3)[8] <- "tot_count"
@@ -1063,7 +1080,6 @@ zscores4gt3$a_q2 <- NA
 zscores4gt3$b_q1 <- NA
 zscores4gt3$g_q1 <- NA
 zscores4gt3$g_q2 <- NA
-#zscores4gt3$av_count <- NA
 
 ## Update column order
 names(zscores4gt3)
@@ -1120,7 +1136,6 @@ data_wide_order$metric[data_wide_order$metric == 'b_q2'] <- 'β q=2'
 data_wide_order$metric[data_wide_order$metric == 'g_q0'] <- 'γ q=0'
 data_wide_order$metric[data_wide_order$metric == 'g_q1'] <- 'γ q=1'
 data_wide_order$metric[data_wide_order$metric == 'g_q2'] <- 'γ q=2'
-
 head(data_wide_order)
 #View(data_wide_order)
 
@@ -1131,6 +1146,7 @@ data_wide_order[c(2:12,14:24,26:36),1] <- ''
 library(reporter)
 library(magrittr)
 
+## Create metric symbols
 data_wide_order[1,2] <-supsc("0")  %p% "D α"
 data_wide_order[2,2] <-supsc("1")  %p% "D α"
 data_wide_order[3,2] <-supsc("2")  %p% "D α"
@@ -1170,7 +1186,7 @@ data_wide_order[34,2] <-"N"
 data_wide_order[35,2] <-"N cv"
 data_wide_order[36,2] <-"N tot"
 head(data_wide_order)
-View(data_wide_order)
+#View(data_wide_order)
 
 ## Remove the SD values
 data_wide_order <- data_wide_order[1:24,]
@@ -1201,13 +1217,12 @@ image(seq_along(svals), 1, as.matrix(seq_along(svals)), col=colors,
 ## Return colour hex codes
 colors
 "#C0C1BC" "#D1D189" "#E2E256" "#F3F223" "#E0F210" "#A8E21B" "#6FD326" "#37C331"
-
 #_______________________________________________________________________________
-#### BIODIVERSITY CLUSTERS: GROUP CHARACTERISTICS CENTRES ONLY (TABLE 6) ####
+#### BIODIVERSITY CLUSTERS: GROUP CHARACTERISTICS CENTRES ONLY (TABLE 4) ####
 
 ## Take just the centres for variables used in clustering
 col_scale_data <- data_wide_order[c(1,4,6,7,10,11,12),2:10]
- str(col_scale_data)
+str(col_scale_data)
  
 # Add total row (centres summed). Note these values used to set cluster colours.
 col_scale_data_new <- col_scale_data %>%
@@ -1222,12 +1237,10 @@ print(col_scale_data_new)
 ## Update order of columns
 col_scale_data_new2 <- col_scale_data_new[,c(1,3,9,6,2,5,7,8,4)]
 print(col_scale_data_new2)
+
+## Load package
 library(gt)
 
-################
-#col_scale_data_new2$metric <- c("hill0_alpha","hill0_beta","hill2_beta","hill0_gamma","abund","abun_cv","abund_tot","total")
-
-###############
 ## Create table
 metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
    sub_missing()%>%
@@ -1289,14 +1302,14 @@ metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
       cells_column_labels(columns = c('3'))))%>%
      cols_label(
        metric = md("**Metric**"),
-    '1' = md("**1**"),
-    '2' = md("**2**"),
-    '3' = md("**3**"),
-    '4' = md("**4**"),
-    '5' = md("**5**"),
-    '6' = md("**6**"),
-    '7' = md("**7**"),
-    '8' = md("**8**"))%>%
+    '1' = md("**Bio-D**"),
+    '2' = md("**Bio-A**"),
+    '3' = md("**Bio-H**"),
+    '4' = md("**Bio-E**"),
+    '5' = md("**Bio-C**"),
+    '6' = md("**Bio-F**"),
+    '7' = md("**Bio-G**"),
+    '8' = md("**Bio-B**"))%>%
     tab_style(
     style = cell_borders(
       sides = c( "bottom"),
@@ -1333,7 +1346,6 @@ metric.cluster8
 metric.cluster8 %>%
  # gtsave("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_6.png", expand = 10)# save table as .png
  gtsave("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_6.html")# save in html (tabular) format
-
 #_______________________________________________________________________________
 #### EXPLAINING PATTERNS: PREPARE RASTER DATA ####
 
@@ -1353,20 +1365,19 @@ colnames(fac)=c("Sample","lon","lat","cluster")
 fac$cluster=as.factor(fac$cluster)
 
 ## Get PHY data from rasters using variables used in RF modelling. Note sediment data comes from actual samples
-so_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/so_mean.tif")# SALINITY MEAN
 phyc_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/phyc_mean.tif")# PHYTOPLANKTON
 thetao_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/thetao_mean.tif")# BOTTOM TEMP
+no3_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/no3_mean.tif")# NITRATE
 Current_Sp<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/Current_Sp.tif")# CURRENT SPEED
-Wave_veloc<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/wave_veloc.tif")# WAVE VELOCITY
-so_range<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/so_range.tif")# SALINITY RANGE
 vd<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/VD.tif")# VALLEY DEPTH
-si_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/si_mean.tif")# SILICATE
+so_range<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/so_range.tif")# SALINITY RANGE
 dfe_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/dfe_mean.tif")# DISSOLVED IRON
+Wave_veloc<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/wave_veloc.tif")# WAVE VELOCITY
 CND<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/CND.tif")#CHANNEL NETWORK DISTANCE
 LSF<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/LSF.tif")#LS-FACTOR
 CDP0<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/CDP0.tif")#CLOSED DEPRESSIONS
-
-
+#si_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/si_mean.tif")# SILICATE
+#so_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/so_mean.tif")# SALINITY MEAN
 #Bathymetry<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/Bathymetry.tif")
 #chl_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/chl_mean.tif")
 #CNBL<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/CNBL.tif")
@@ -1377,42 +1388,40 @@ CDP0<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPr
 #SPM_SUMMER<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/SPM_SUMMER.tif")
 #SPM_WINTER<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/SPM_WINTER.tif")
 #o2_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/o2_mean.tif")
-#no3_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/no3_mean.tif")
 #ph_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/ph_mean.tif")
-#thetao_range<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/thetao_range.tif")
 #ph_range<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/ph_range.tif")
 #po4_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/po4_mean.tif")
 #chl_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/chl_mean.tif")
 #KDPAR_mean_mean<- raster("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/KDPAR_mean_mean.tif")
 
-
 ## Create raster stack
 predictors <- stack(
-so_mean,
-phyc_mean,
-thetao_mean,
-Current_Sp,
-Wave_veloc,
-so_range,
-vd,
-si_mean,
-dfe_mean,
-CND,
-LSF,
-CDP0)
+  phyc_mean,
+  thetao_mean,
+  no3_mean,
+  Current_Sp,
+  vd,
+  so_range,
+  dfe_mean,
+  Wave_veloc,
+  CND,
+  LSF,
+  CDP0
+)
 
+## Plot raster stack
 plot(predictors)
+
 ## Update names for predictor variables
 names(predictors)=c(
-'Salinity mean',
 'Phytoplankton',
 'Bottom temp.',
+'Nitrate',
 'Current speed',
-'Wave velocity',
-'Salinity range',
 'Valley depth',
-'Silicate',
+'Salinity range',
 'Diss. Iron',
+'Wave velocity',
 'Ch. network distance',
 'LS-factor',
 'Closed depressions'
@@ -1552,7 +1561,7 @@ eight<- 1619
 SS1= subset(phy_bio,Cluster=="1")
 
 ## Check number of samples in df 'SS1' tallies with the above table
-#dim(SS1)# 1291 it does
+#dim(SS1)
 
 ## Generate random numbers (without replacement) from 1 to n
 set.seed(1)# to stop random numbers changing
@@ -1564,49 +1573,49 @@ SS1$SSNumber <-SS1num
 
 ## Now do the same for cluster group 2
 SS2= subset(phy_bio,Cluster=="2")
-#dim(SS2)# 514 it does
+#dim(SS2)
 set.seed(2)# to stop random numbers changing
 SS2num=sample(1:two,two)
 SS2$SSNumber <-SS2num
 
 ## Now do the same for cluster group 3
 SS3= subset(phy_bio,Cluster=="3")
-#dim(SS3)# 514 it does
+#dim(SS3)
 set.seed(2)# to stop random numbers changing
 SS3num=sample(1:three,three)
 SS3$SSNumber <-SS3num
 
 ## Now do the same for cluster group 4
 SS4= subset(phy_bio,Cluster=="4")
-#dim(SS4)# 514 it does
+#dim(SS4)
 set.seed(2)# to stop random numbers changing
 SS4num=sample(1:four,four)
 SS4$SSNumber <-SS4num
 
 ## Now do the same for cluster group 5
 SS5= subset(phy_bio,Cluster=="5")
-#dim(SS5)# 514 it does
+#dim(SS5)
 set.seed(2)# to stop random numbers changing
 SS5num=sample(1:five,five)
 SS5$SSNumber <-SS5num
 
 ## Now do the same for cluster group 6
 SS6= subset(phy_bio,Cluster=="6")
-#dim(SS6)# 514 it does
+#dim(SS6)
 set.seed(2)# to stop random numbers changing
 SS6num=sample(1:six,six)
 SS6$SSNumber <-SS6num
 
-## Now do the same for cluster group 6
+## Now do the same for cluster group 7
 SS7= subset(phy_bio,Cluster=="7")
-#dim(SS6)# 514 it does
+#dim(SS6)
 set.seed(2)# to stop random numbers changing
 SS7num=sample(1:seven,seven)
 SS7$SSNumber <-SS7num
 
-## Now do the same for cluster group 6
+## Now do the same for cluster group 8
 SS8= subset(phy_bio,Cluster=="8")
-#dim(SS6)# 514 it does
+#dim(SS6)
 set.seed(2)# to stop random numbers changing
 SS8num=sample(1:eight,eight)
 SS8$SSNumber <-SS8num
@@ -1614,23 +1623,22 @@ SS8$SSNumber <-SS8num
 ## Stitch together all the data subsets
 best.data.ss=rbind(SS1,SS2,SS3,SS4,SS5,SS6,SS7,SS8)
 
-## Now select only samples with random no. 8:1420
-#best.data.ss.final=subset(best.data.ss, SSNumber<1420)
+## Now select only samples with random no. < 201
 best.data.ss.final=subset(best.data.ss, SSNumber<201)
-#dim(best.data.ss.final)# should be 7296 (6 x 1217) -it is
+#dim(best.data.ss.final)# should be 1600 (8 x 200) -it is
 #names(best.data.ss.final)
 
 ## Create a df 'bestBIO' for biodiversity data (metrics used for clustering) and save
-bestBIO=best.data.ss.final[,c(19:25)]
+bestBIO=best.data.ss.final[,c(18:24)]
 head(bestBIO)
 dim(bestBIO)#1600 7
 #write.csv(bestBIO,file = "OUTPUTS/bestBIO.csv",row.names=TRUE)
 
 ## Create a df 'bestPHY' for physical variables and save.
-bestPHY=best.data.ss.final[,c(3:16)]
+bestPHY=best.data.ss.final[,c(3:15)]
 #bestPHY$Bathymetry <- abs(bestPHY$Bathymetry)# Make bathymetric values positive
 head(bestPHY)
-dim(bestPHY)#1600   22
+dim(bestPHY)#1600   13
 
 sum(is.na(bestPHY))
 
@@ -1663,14 +1671,15 @@ bestPHY2=subset(bestPHY, select = c(
 Phytoplankton,
 Bottom.temp.,
 Current.speed,
-Salinity.range,
 Valley.depth,
+Salinity.range,
 Diss..Iron,
 Ch..network.distance,
 LS.factor,
 Closed.depressions,
 Gravel,
 Mud
+
 ))
 dim(bestPHY2)#1600 11
 #_______________________________________________________________________________
@@ -1682,8 +1691,6 @@ dim(bestPHY2)#1600 11
 # distribution is right-skewed.
 #bestPHY2 <- bestPHY
 #View(bestPHY2)
-
-#summary(bestPHY2)# Positive skewness (mean>median) for light (2), SPM (5), WOV (6),  Gravel (7), Mud (8)
 summary(bestPHY2)# Positive skewness (mean>median) for SPM_SUMMER (1), gravel (2), Mud (4), VD (7), CND (10), LSF (12)
 
 ## Return skewness values
@@ -1694,24 +1701,31 @@ bestPHY2[,1:11] %>%
 
 
 ## Transform relevant columns 
-bestPHY2[,c(1,2,4,5,7,8,9,10,11)]=log(bestPHY2[,c(1,2,4,5,7,8,9,10,11)]+0.1)
-
+#bestPHY2[,c(1,2,4,5,7,8,9,10,11)]=log(bestPHY2[,c(1,2,4,5,7,8,9,10,11)]+0.1)
+bestPHY2[,c(7,8,9,10,11)]=log(bestPHY2[,c(7,8,9,10,11)]+0.1)
 View(bestPHY2)
+
+## Find row with NA
 sum(is.na(bestPHY2))
 which(is.na(bestPHY2), arr.ind = TRUE)
 
 ## Need to remove row with NaN
 bestPHY2 <- bestPHY2[-1278, ]
+
+## Check dim of bestPHY2
 dim(bestPHY2)#1599
 
 ## Need to update bestBIO and bestFAC too
 bestBIO <- bestBIO[-1278, ]
 bestFAC <- bestFAC[-1278, ]
-dim(bestBIO)
 
-length(bestFAC)
+## Check dim of bestBIO
+dim(bestBIO)#1599
+
+## Check length of bestFAC
+length(bestFAC)#1599
 #_______________________________________________________________________________
-#### EXPLAINING PATTERNS: BIOENV (TABLE 8) ####
+#### EXPLAINING PATTERNS: BIOENV (TABLE 7) ####
 
 ## Run bioenv with the transformed faunal (df 'bestBIO') and the selected env variables
 #(df 'bestPHY2').
@@ -1730,9 +1744,10 @@ bestBIO <- df_combined[,1:7]
 bestPHY2 <- df_combined[,8:18]
 
 ## Check dfs same length
-dim(bestBIO)# 1591 7
-dim(bestPHY2)# 1591 8
-length(bestFAC)
+dim(bestBIO)# 1599 7
+dim(bestPHY2)# 1599 11
+length(bestFAC)# 1599
+
 # Normalize the data
 bestPHY2 <- scale(bestPHY2)
 
@@ -1740,7 +1755,7 @@ bestPHY2 <- scale(bestPHY2)
 ## Perform BIOENV analysis
 library(vegan) # Load library
 res<-bioenv(bestBIO, bestPHY2) 
-#res
+res # correlation = 0.1664933 
 
 ## See all best results
 summary(res)
@@ -1760,32 +1775,32 @@ res3 <-res3%>% mutate(Variables = gsub("\\Gravel", "Gravel %", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Mud", "Mud %", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\LS.factor", "LS factor", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Silicate", "Silicate", Variables))
-res3 <-res3%>% mutate(Variables = gsub("\\Salinity.range", "Salinity range", Variables))
-res3 <-res3%>% mutate(Variables = gsub("\\Ch..network.distance", "Ch. network distance", Variables))
+res3 <-res3%>% mutate(Variables = gsub("\\Salinity.range", "Salinity range (ppt)", Variables))
+res3 <-res3%>% mutate(Variables = gsub("\\Ch..network.distance", "Ch. network distance (m)", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Current.speed", "Current speed", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Summer.SPM", "Summer SPM", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Bottom.temp.", "ottom temp.", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Valley.depth", "Valley depth", Variables))
 res3 <-res3%>% mutate(Variables = gsub("\\Closed.depressions", "Closed depressions", Variables))
-res3 <-res3%>% mutate(Variables = gsub("\\Diss..Iron", "Diss. Iron", Variables))
-
+res3 <-res3%>% mutate(Variables = gsub("\\Diss..Iron", "Diss. Iron (mmol m-3)", Variables))
+res3 <-res3%>% mutate(Variables = gsub("\\Phytoplankton", "Phytoplankton (mmol m-3)", Variables))
+res3 <-res3%>% mutate(Variables = gsub("\\Current speed", "Current speed (m s-1)", Variables))
 res3
 
+## Load packages
 library(knitr)
 library(dplyr)
-
 library(kableExtra)
 
-## Creat table as kable output
+## Create table as kable output
 kable_table <- kable(res3[1:8,], escape=FALSE,format = "html",caption = "")%>%
   kable_styling()%>%
-  row_spec(8,bold=T,hline_after = T)
-  
+  row_spec(6,bold=T,hline_after = T)
   
 # Save the kable table as an HTML file
-save_kable(kable_table, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_8.html")
+save_kable(kable_table, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_7.html")
 
-## Create results table
+## Create results table as .png
 
 ## Load packages
 #library(knitr)
@@ -1834,16 +1849,14 @@ bestPHY2 <- as.data.frame(bestPHY2)
 
 ## Use Adonis to see how much of the variation is explained by the different variables. Enter
 # phy variable which are important (see BEST results) http://www.talkstats.com/showthread.php/15912-Permanova-Adonis
-#adonis.res=adonis2(formula = bestBIO ~ Current.speed + Summer.SPM + Gravel, data = bestPHY2, permutations = 999,method = "bray",by = "terms")
-adonis.res=adonis2(formula = bestBIO ~ Current.speed + Salinity.range + Valley.depth + LS.factor + Closed.depressions + Gravel + Mud                                                             , data = bestPHY2, permutations = 999,method = "bray",by = "terms")
+adonis.res=adonis2(formula = bestBIO ~ Phytoplankton + Current.speed + Ch..network.distance + LS.factor + Gravel + Mud, data = bestPHY2, permutations = 999,method = "bray",by = "terms")
 adonis.res
 
 # Results
-# 78.8% of the variation remains unexplained by the model
-# variables explain 21 % pf variation (gravel = 6.4%, current speed = 5.1%, salinity range = 3.0%, mud = 2.4%)
+# 79.2% of the variation remains unexplained by the model
+# variables explain 20.8 % pf variation (gravel = 8.0%, phytoplankton = 6.7%, , mud = 3.1%, current speed =2.2%, LS-factor = 0.6%
 #_______________________________________________________________________________
 #### EXPLAINING PATTERNS: dbRDA ORDINATION (FIGURE 6) ####
-
 
 ## Load libraries
 library(ggplot2)
@@ -1852,20 +1865,20 @@ library(gridExtra)
 library(ggrepel)
 # Use distance based redundancy analysis (dbRDA) ordination to visualise the  
 # relationship between macrofaunal data and predictor variables https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/capscale
-# Perform dbRDA
-#vare.cap <- capscale(bestBIO ~ Current.speed + Summer.SPM + Gravel, bestPHY2,dist="bray")
-vare.cap <- capscale(bestBIO ~  Current.speed + Salinity.range + Valley.depth + LS.factor + Closed.depressions + Gravel + Mud, bestPHY2,dist="bray")
+
+## Perform dbRDA
+vare.cap <- capscale(bestBIO ~  Phytoplankton + Current.speed + Ch..network.distance + LS.factor + Gravel + Mud, bestPHY2,dist="bray")
 vare.cap
 
-# Extract site scores and explanatory variables
+## Extract site scores and explanatory variables
 site_scores <- scores(vare.cap, display = "sites")
 species_scores <- scores(vare.cap, display = "species")
 explanatory_scores <- scores(vare.cap, display = "bp")
 
-# Scale the explanatory scores to make arrows longer
+## Scale the explanatory scores to make arrows longer
 explanatory_scores <- explanatory_scores *  1.8# Adjust the scaling factor as needed
 
-# Convert to data frames for ggplot
+## Convert to data frames for ggplot
 site_scores_df <- as.data.frame(site_scores)
 species_scores_df <- as.data.frame(species_scores)
 explanatory_scores_df <- as.data.frame(explanatory_scores)
@@ -1873,35 +1886,66 @@ explanatory_scores_df <- as.data.frame(explanatory_scores)
 # Add cluster information to site scores
 site_scores_df$Cluster <-bestFAC#$Cluster
 
-###########
+## Check types
 class(site_scores_df)
 class(bestFAC)
-###########
 
+## Check dims
+length( bestFAC)#1599
+dim(site_scores_df)#1593 3
 
-length( bestFAC)#1592
-dim(site_scores_df)#1591
+## Define custom labels
+custom_labels <- c('Phytoplankton','Current speed', 'Ch. network distance', 'LS-factor', 'Gravel' , 'Mud')
 
-
-# Define custom labels
-#custom_labels <- c("Current speed", "Summer SPM", "Gravel %")
-custom_labels <- c('Current speed' , 'Salinity range' , 'Valley depth' , 'LS-factor' , 'Closed depressions' , 'Gravel %' , 'Mud %')
-# Define colors
-#colors <- c("#37C331", "#6FD326", "#E2E256", "#D1D189", "#F3F223", "#A8E21B", "#E0F210", "#C0C1BC")
+## Define colors
 colors <- c("#37C331", "#6FD326", "#A8E21B", "#E0F210", "#F3F223", "#E2E256", "#D1D189", "#C0C1BC")
-# Define the order of legend items
-#legend_order <- c("1", "2", "6", "7", "5", "3", "4", "8")
+
+## Define the order of legend items
 legend_order <- c( '2','8','5','1','4','6','7','3')
+
+
 # Plot
 p <- ggplot() +
-  geom_point(data = site_scores_df, aes(x = CAP1, y = CAP2, color = as.factor(Cluster)), size = 2) +
-  geom_segment(data = explanatory_scores_df, aes(x = 0, y = 0, xend = CAP1, yend = CAP2), arrow = arrow(length = unit(0.2, "cm")), color = "black") +
-  geom_text_repel(data = explanatory_scores_df, aes(x = CAP1, y = CAP2, label = custom_labels), color = "black", size = 5) +
+  geom_point(data = site_scores_df, aes(x = CAP1, y = -CAP2, color = as.factor(Cluster)), size = 2) +
+  geom_segment(data = explanatory_scores_df, aes(x = 0, y = 0, xend = CAP1, yend = -CAP2), arrow = arrow(length = unit(0.2, "cm")), color = "black") +
+  geom_text_repel(data = explanatory_scores_df, aes(x = CAP1, y = -CAP2, label = custom_labels), color = "black", size = 5) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey") +
-   scale_color_manual(values = colors, breaks = legend_order) +
+   #scale_color_manual(values = colors, breaks = legend_order) +
+  ####
+  
+
+scale_colour_manual(
+  breaks = c('2','8','5','1','4','6','7','3'),
+  values = c(
+    '2' = "#37C331",
+    '8' = "#6FD326",
+    '5' = "#A8E21B",
+    '1' = "#E0F210",
+    '4' = "#F3F223",
+    '6' = "#E2E256",
+    '7' = "#D1D189",
+    '3' = "#C0C1BC"
+  ),
+  labels = c(
+    '2' = "Bio-A",
+    '8' = "Bio-B",
+    '5' = "Bio-C",
+    '1' = "Bio-D",
+    '4' = "Bio-E",
+    '6' = "Bio-F",
+    '7' = "Bio-G",
+    '3' = "Bio-H"
+  ),
+  name = "Cluster",
+  na.value = "transparent",
+  na.translate = FALSE)+
   theme_bw() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+  legend.text = element_text(color = "black", size = 14),  # Increase text size
+  legend.title = element_text(color = "black", size = 16), # Optional: increase title siz
+) +
   labs(color = "Cluster") +
   xlim(-2.5, 2.5) +
   ylim(-3, 2.5)+
@@ -1910,10 +1954,10 @@ p <- ggplot() +
 p
 # Save plot
 ggsave("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Figure_6.png", plot = p, width = 20, height = 20, units = "cm", dpi = 800)
-
-
 #_______________________________________________________________________________
-#### SPATIAL MODELLING OF INDIVIDUAL METRICS: RASTER PREDICTOR VARIABLES - REPLACE WITH ANNA'S SCRIPT ####
+#### SPATIAL MODELLING OF INDIVIDUAL METRICS: RASTER PREDICTOR VARIABLES (QUICK LOOK) ####
+
+# This code is intended for a quick look-see. For final models and associated RF outputs (inc associated model confidence maps), use R script in file xx
 
 ## Load packages
 library(raster)
@@ -1963,7 +2007,6 @@ metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='g_q1', na.rm = TR
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='g_q2', na.rm = TRUE)
 
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='count', na.rm = TRUE)
-#metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='av_count', na.rm = TRUE)
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='cv_count', na.rm = TRUE)
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='tot_count', na.rm = TRUE)
 head(metric)
@@ -1972,13 +2015,13 @@ head(metric)
 
 ## Select 
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='g_q0' |metric=='g_q2' , na.rm = TRUE)
-dim(metric)#45487     5
+dim(metric)#37370     5
 #View(metric )
 
 ## Wide data format allowing gamma 0 to be subtracted from g_2.
 library(tidyr)
 metric_wide <- spread(metric, metric, measurement)
-dim(metric_wide)#22746     5
+dim(metric_wide)# 21766     5
 #View(metric_wide)
 
 ## Remove rows with NA
@@ -1988,7 +2031,7 @@ dim(metric_wide_complete)#22741     5
 ## Create new col for 'g_rare'
 metric_wide_complete$g_rare <- (1-metric_wide_complete$g_q2/ metric_wide_complete$g_q0)*100
 metric_wide_complete
-dim(metric_wide_complete)#22741     6
+dim(metric_wide_complete)#15604     6
 
 ## Take just columns of interest with col names like other 'metric' objects
 metric_wide_complete2 <- metric_wide_complete[,c(1:3,6)]
@@ -2010,6 +2053,8 @@ colnames(metric_rare) <- c('sample','x','y','metric','value','type','paper')
 metric_rare <- metric_rare[,c(7,1:4,6,5)]
 head(metric_rare)
 dim(metric_rare)
+
+## Save metric rare data for use with RF modelling script (see xx.R)
 write.csv(metric_rare, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\biodiv_metric_rare_4_modelling.csv", row.names=FALSE)
 #_______________________________________________________________________________
 #### SPATIAL MODELLING OF INDIVIDUAL METRICS: EXTRACT PREDICTOR VARIABLE VALUES FROM RASTER STACK ####
@@ -2045,7 +2090,7 @@ str(sdata2)
 
 ## First check cols of correct type
 str(sdata2)
-dim(sdata2)# 17127    14
+dim(sdata2)# 21829    14
 #____________________________________________________________________________________________________________________
 #### SPATIAL MODELLING OF INDIVIDUAL METRICS: MAKE TRAINING AND TESTING SET ####
 
@@ -2066,7 +2111,7 @@ msk= sample.split( Y, SplitRatio = 9/10, group = NULL )
 
 ## The training set
 train = sdata2[ msk,] 
-dim(train)# 15417    14
+dim(train)# 19646    14
 head(train)
 
 ## Remove station labels for train
@@ -2075,7 +2120,7 @@ head(train2)
 
 ## The test set
 test  = sdata2[ !msk,]
-dim(test) # 1710   14
+dim(test) # 2183   14
 head(test)
 
 ## Remove station labels for test
@@ -2087,8 +2132,8 @@ str(test2)
 print(table(Y, msk)) 
 
 ## Check number of samples in train and test sets is equal to total
-dim(sdata) # 17127    12
-dim(train)+dim(test)# 17127    28
+dim(sdata) # 21829    12
+dim(train)+dim(test)# 21829    28
 #____________________________________________________________________________________________________________________
 #### SPATIAL MODELLING OF INDIVIDUAL METRICS: DO MODELLING ####
 
@@ -2116,27 +2161,7 @@ rf2 <- randomForest(model, data=train3)
 #varImpPlot(rf2)
 #dev.off()
 
-#preds <- names(rf2$forest$xlevels)
-
-#for (i in 1:length(preds)){
-#  partialPlot(rf2, train2, preds[i], which.class ='1')
-#  next
-#}
 #____________________________________________________________________________________________________________________
-#### SPATIAL MODELLING OF INDIVIDUAL METRICS: EVALUATE THE MODEL PERFORMANCE ####
-
-## Predict cluster group for test set
-#pred <- predict(rf2, newdata = test2)
-#table(pred, test2$value)
-
-## We can test the accuracy as follows:
-#(80+100+151+91+64+402+34+41+19+74+15)/ nrow(test2)# 58.5%
-#(80+108+163+92+67+403+41+45+19+82+20)/ nrow(test2)#61.3
-
-## Matches for nearest cluster neighbour(s), based on dendrogram in Cooper & Barry (2017) fig 3a.
-#(10+0+0+17+0+18+1+16+6+14+20+21+7+9+24+19+3+2+3+4+59+0+23+5+65+7+2+200+13+13+102)/ nrow(test2)# 71%
-
-#_______________________________________________________________________________
 #### SPATIAL MODELLING OF INDIVIDUAL METRICS: PRODUCE FULL COVERAGE RASTER FOR EACH METRIC ####
 
 ## Use model to predict cluster group for each raster cell
@@ -2159,7 +2184,6 @@ writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpo
 writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\g_q2.tif',overwrite=TRUE,format = "GTiff")
 
 writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\count.tif',overwrite=TRUE,format = "GTiff")
-#writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\av_count.tif',overwrite=TRUE,format = "GTiff")
 writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\cv_count.tif',overwrite=TRUE,format = "GTiff")
 writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\tot_count.tif',overwrite=TRUE,format = "GTiff")
 
@@ -2190,27 +2214,19 @@ library(ggpubr)
 ## Bring in countries polygon
 countries <- st_read(file.path("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\EuropeLiteScoWal.shp"))
 
-## Read in data (until R code is completed)
-#spec9 <- read.csv("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\spec9v3_outliers_removed.csv",header=TRUE, stringsAsFactors=FALSE)
-#head(spec9)
-
 ## Data required for modelling biodiversity metrics (long format, outliers removed, all metrics)
 head(biodiv9_mod)
-
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D0 Alpha ####
 
 ## Load model raster
-a_q0_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\sample_a_q0NEW.tif')
+a_q0_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/0Dα (Hill 0, Alpha)/Model/sample_a_q0_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 a_q0_model_agg <- aggregate(a_q0_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(a_q0_model)
-
-## Facet names
-#hum_names <- as_labeller(c(`S` = "S"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 =  "{}^{0}~italic(D)[italic(α)]" #
@@ -2247,16 +2263,13 @@ theme(panel.grid.major = element_blank(),
 #### MAP BIODIVERSITY METRICS: D0 Beta ####
 
 ## Load raster layer
-b_q0_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\b_q0.tif')
+b_q0_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/0Dβ (Hill 0, Beta)/Model/b_q0_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 b_q0_model_agg <- aggregate(b_q0_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(b_q0_model)
-
-## Facet names
-hum_names <- as_labeller(c(`S` = "S"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{0}~italic(D)[italic(β)]"# "~beta~ q == 0"
@@ -2293,16 +2306,13 @@ theme(panel.grid.major = element_blank(),
 #### MAP BIODIVERSITY METRICS: D0 Gamma ####
 
 ## Load raster layer
-g_q0_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\g_q0.tif')
+g_q0_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/0Dγ (Hill 0, Gamma)/Model/g_q0_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 g_q0_model_agg <- aggregate(g_q0_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(g_q0_model)
-
-## Facet names
-hum_names <- as_labeller(c(`S` = "S"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 ="{}^{0}~italic(D)[italic(γ)]" # "~gamma~ q == 0"
@@ -2339,17 +2349,13 @@ D0_gamma <- ggplot() +
 #### MAP BIODIVERSITY METRICS: D1 alpha ####
 
 ## Load raster layer
-a_q1_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\sample_a_q1.tif')
+a_q1_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/1Dα (Hill 1, Alpha)/Model/sample_a_q1_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 a_q1_model_agg <- aggregate(a_q1_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(a_q1_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{1}~italic(D)[italic(α)]"#"~alpha~ q == 1"
@@ -2385,17 +2391,13 @@ D1_alpha <- ggplot() +
 #### MAP BIODIVERSITY METRICS: D1 beta ####
 
 ## Load model raster D1 beta
-b_q1_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\b_q1.tif')
+b_q1_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/1Dβ (Hill 1, Beta)/Model/b_q1_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 b_q1_model_agg <- aggregate(b_q1_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(b_q1_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{1}~italic(D)[italic(β)]" # "~beta~ q == 1"
@@ -2432,17 +2434,13 @@ D1_beta <- ggplot() +
 #### MAP BIODIVERSITY METRICS: D1 gamma ####
 
 ## Load raster
-g_q1_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\g_q1.tif')
+g_q1_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/1Dγ (Hill 1, Gamma)/Model/g_q1_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 g_q1_model_agg <- aggregate(g_q1_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(g_q1_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{1}~italic(D)[italic(γ)]"# "~gamma~ q == 0"
@@ -2479,17 +2477,13 @@ D1_gamma <- ggplot() +
 #### MAP BIODIVERSITY METRICS: D2 alpha ####
 
 ## Load raster
-a_q2_model <-  rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\sample_a_q2.tif')
+a_q2_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/2Dα (Hill 2, Alpha)/Model/sample_a_q2_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 a_q2_model_agg <- aggregate(a_q2_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(a_q2_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{2}~italic(D)[italic(α)]" #"~alpha~ q == 2"
@@ -2525,17 +2519,13 @@ D2_alpha <- ggplot() +
 #### MAP BIODIVERSITY METRICS: D2 beta ####
 
 ## Load model raster D2 beta
-b_q2_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\b_q2.tif')
+b_q2_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/2Dβ (Hill 2, Beta)/Model/b_q2_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 b_q2_model_agg <- aggregate(b_q2_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(b_q2_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 ="{}^{2}~italic(D)[italic(β)]" # "~beta~ q == 2"
@@ -2572,17 +2562,13 @@ D2_beta <- ggplot() +
 #### MAP BIODIVERSITY METRICS: D2 gamma ####
 
 ## Load raster
-g_q2_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\g_q2.tif')
+g_q2_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/2Dγ (Hill 2, Gamma)/Model/g_q2_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 g_q2_model_agg <- aggregate(g_q2_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(g_q2_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{2}~italic(D)[italic(γ)]" #"~gamma~ q == 2"
@@ -2619,16 +2605,13 @@ D2_gamma <- ggplot() +
 #### MAP BIODIVERSITY METRICS: N ####
 
 ## Load raster
-count_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\count.tif')
+count_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/N (Abund)/Model/av_count_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 count_model_agg <- aggregate(count_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(count_model)
-
-## Facet names
-hum_names <- as_labeller(c(`gamma` = "γ"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "italic(N)"##"N~alpha" "~av~count"
@@ -2663,16 +2646,13 @@ count_map <- ggplot() +
 #### MAP BIODIVERSITY METRICS: N CV ####
 
 ## Load raster
-cv_count_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\cv_count.tif')
+cv_count_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Ncv (Abund cv)/Model/cv_count_Mean_SQ_2025.tif')
 
 ## Reduce size of raster
 cv_count_model_agg <- aggregate(cv_count_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(cv_count_model)
-
-## Facet names
-hum_names <- as_labeller(c(`gamma` = "γ"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "italic(N[cv])"#"~cv~count"
@@ -2708,16 +2688,12 @@ cv_count_map <- ggplot() +
 #### MAP BIODIVERSITY METRICS: N TOT ####
 
 ## Load raster
-tot_count_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\tot_count.tif')
+tot_count_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Ntot (Abund total)/Model/tot_count_Mean_SQ.tif')
 
 ## Reduce size of raster
 tot_count_model_agg <- aggregate(tot_count_model, fact=7,fun = modal)
 
 ## Remove raster to save space
-rm(gamma_model)
-
-## Facet names
-hum_names <- as_labeller(c(`gamma` = "γ"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "italic(N[tot])"#"~tot~count"
@@ -2772,11 +2748,13 @@ fig2 <- annotate_figure(
 
 ## Save combined plot
 ggsave(plot = fig2,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_2_new.png"),
-       height = 400, width =320, units = "mm", dpi = 500,
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_2.png"),
+       height = 350, width =280, units = "mm", dpi = 500,#height = 400, width =320, units = "mm", dpi = 500,
        device = "png",limitsize = FALSE,bg="white")#width =285
 #_______________________________________________________________________________
-#### SPATIAL MODELLING OF BIODIVERSITY CLUSTERS: RASTER PREDICTOR VARIABLES - REPLACE WITH ANNA'S SCRIPT  ####
+#### SPATIAL MODELLING OF BIODIVERSITY CLUSTERS: RASTER PREDICTOR VARIABLES (QUICK LOOK) ####
+
+# This code is intended for a quick look-see. For final models and associated RF outputs (inc associated model confidence maps), use R script in file xx
 
 ## Load packages
 library(raster)
@@ -2825,12 +2803,14 @@ head(BiodivCluster2)
 colnames(BiodivCluster2) <- c('sample','x','y','value','type','paper','metric')
 BiodivCluster2 <- BiodivCluster2[,c(6,1:3,7,5,4)]
 dim(BiodivCluster2)
+
+## Save biodiv clusters for use with RF modelling script (see xx.R)
 write.csv(BiodivCluster2, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\biodiv_cluster_4_modelling.csv", row.names=FALSE)
 
 ## Change names of cols
 colnames(BiodivCluster)=c("Sample","lon","lat","cluster")
 head(BiodivCluster)
-dim(BiodivCluster)# 17845     4
+dim(BiodivCluster)# 13654     4
 
 ## Extract variables from raster stack
 sdata <- raster::extract(predictors, BiodivCluster[,2:3])
@@ -2865,7 +2845,7 @@ msk= sample.split( Y, SplitRatio = 9/10, group = NULL )
 
 ## The training set
 train = sdata2[ msk,] 
-#dim(train)#8657   11
+#dim(train)#12287    14
 #View(train)
 
 ## Remove station labels for train
@@ -2884,11 +2864,11 @@ test2 =test[,2:14]#was 11
 #str(test2)
 
 ## Check number of observations for train (TRUE) and test (FALSE) sets
-#print(table(Y, msk)) 
+print(table(Y, msk)) 
 
 ## Check number of samples in train and test sets is equal to total
-#dim(sdata) # 9619   9
-#dim(train)+dim(test)# 9619   22
+dim(sdata) # 13654    12
+dim(train)+dim(test)# 13654    28
 #____________________________________________________________________________________________________________________
 #### SPATIAL MODELLING OF BIODIVERSITY CLUSTERS: DO MODELLING ####
 
@@ -2911,18 +2891,11 @@ rf2 <- randomForest(model, data=train3)
 #### SPATIAL MODELLING OF BIODIVERSITY CLUSTERS: EXAMINE HOW VARIABLES ARE INFLUENCING THE MODEL ####
 
 ## Produce plots 
-#varImpPlot(rf2)
+varImpPlot(rf2)
 
-#png('OUTPUTS/BIODIVERSITY/variables_affecting_model_structure.png') # height=nrow(pr), width=ncol(pr) EFFECTS TRAITS
+#png('OUTPUTS/BIODIVERSITY/variables_affecting_model_structure.png') # height=nrow(pr), width=ncol(pr) 
 #varImpPlot(rf2)
 #dev.off()
-
-#preds <- names(rf2$forest$xlevels)
-
-#for (i in 1:length(preds)){
-#  partialPlot(rf2, train2, preds[i], which.class ='1')
-#  next
-#}
 #_______________________________________________________________________________
 #### SPATIAL MODELLING OF BIODIVERSITY CLUSTERS: EVALUATE THE MODEL PERFORMANCE ####
 
@@ -2931,7 +2904,7 @@ pred <- predict(rf2, newdata = test2)
 #table(pred, test2$Cluster)
 
 ## We can test the accuracy as follows:
-(110+73+156+171+91+55+96+10641+19+74+15)/ nrow(test2)# 48%
+(46+108+61+103+38+159+54+93)/ nrow(test2)# 48%
 
 ## Confusion matrix plot
 #https://stackoverflow.com/questions/37897252/plot-confusion-matrix-in-r-using-ggplot
@@ -2946,9 +2919,9 @@ cm <- ggplot(confusion_matrix, aes(pred,sort(Var2,decreasing = T), fill= Freq)) 
   scale_y_discrete(labels=c("6","5","4","3","2","1"))
 
 ## Save confusion matrix
-png('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S4.png')
-cm
-dev.off()
+#png('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S4.png')
+#cm
+#dev.off()
 #_______________________________________________________________________________
 #### SPATIAL MODELLING OF BIODIVERSITY CLUSTERS: PRODUCE FULL COVERAGE RASTER ####
 
@@ -2960,9 +2933,8 @@ plot(pr)
 
 ## Save raster
 writeRaster(pr,'C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Biodiversity_new.tif',overwrite=TRUE,format = "GTiff")
-
 #_______________________________________________________________________________
-#### MAP BIODIVERSITY CLUSTERS: POINT MAP PLOT (FIGURE 4) ####
+#### MAP BIODIVERSITY CLUSTERS: POINT MAP PLOT ####
 
 ## Load packages
 library(sf)
@@ -2992,7 +2964,10 @@ levels(faunal.cluster7$FaunalCluster)
 biodiv_point= ggplot()+
   geom_sf(data=countries, fill ="black",col ="black")+ 
   geom_point(data = faunal.cluster7,aes(x = X, y = Y,col=FaunalCluster), size = 0.1)+
-  scale_colour_manual(values = c( "#37C331","#6FD326","#A8E21B", "#E0F210","#F3F223","#E2E256", "#D1D189","#C0C1BC"),name="Cluster")+ 
+  scale_colour_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
+    "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
+    labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
+    na.value="transparent")+
   guides(colour = guide_legend(override.aes = list(size=3)))+#NEW
   coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
   theme_bw(base_size = 14)+#base_size = 24
@@ -3006,15 +2981,13 @@ biodiv_point= ggplot()+
   theme(plot.margin = unit(c(0,0.2,0,0), "cm"),legend.key.size = unit(0.4, "cm"))+
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
-#scale_colour_manual(breaks = c('8','6','4','1','7','5','2','3'), values = c("#37C331","#6FD326","#A8E21B","#E0F210","#F3F223","#E2E256","#D1D189" ,"#C0C1BC"))
 
 biodiv_point
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY CLUSTERS: MAP PLOT (FIGURE 4) ####
 
 ## Load raster layer
-#biodiv <- rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Biodiversity_Cluster_Nov24/BiodiversityClusterMaxClass_Nov24.tif")## ANNA'S FINAL OUTPUT
-biodiv <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Biodiversity_new.tif')
+biodiv <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Bio (Combined Biodiversity)/Model/BiodiversityClusterMaxClass_Aug25.tif')
 
 ## Reduce raster resolution
 biodiv.agg  <- aggregate(biodiv, fact=4,fun = modal)
@@ -3025,16 +2998,17 @@ values(biodiv.agg) <- as.factor(values(biodiv.agg))
 ## Produce map
 pbio <-ggplot() +
   geom_spatraster(data = biodiv.agg) +
-  scale_fill_manual(values = c("#37C331","#6FD326","#A8E21B","#E0F210","#F3F223","#E2E256","#D1D189","#C0C1BC"),name="Cluster", na.translate = F)+
-  geom_sf(data=countries, fill ="black",col ="black")+
+   scale_fill_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
+     "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
+     labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
+     na.value="transparent")+
+   geom_sf(data=countries, fill ="black",col ="black")+
   coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
   xlab("Longitude")+
   ylab("Latitude")+
   theme_bw(base_size = 10)+
   theme(legend.background=element_blank(),legend.text = element_text(color="white",size= 12))+#make legend background transparent and text white
   theme(legend.position=c(0.9,0.21))+
-  scale_fill_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
-     "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),na.value="transparent")+
   theme(axis.title.x = element_text(colour = "black"))+
   labs(x="Longitude",y="Latitude")+
   theme(plot.margin = unit(c(0,0.2,0,0), "cm"),legend.key.size = unit(0.8, "cm"))+
@@ -3044,97 +3018,102 @@ pbio
 
 ## Save plot
 ggsave(plot = pbio,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_4_new.png"),
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_4.png"),
        height = 195, width =195,units = "mm", dpi = 500,
        device = "png",limitsize = FALSE,bg="white")#height = 65, width =180,
 #_______________________________________________________________________________
-#### MAP BIODIVERSITY CLUSTERS CONFIDENCE: MAP PLOT (SUPPLEMENTARY FIGURE S7) ####
+#### MAP BIODIVERSITY CLUSTERS CONFIDENCE: MAP PLOT (SUPPLEMENTARY FIGURE S5) ####
 
 ## Load biodiversity cluster confidence raster
-biodiv_conf <-rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Biodiversity_Cluster_Nov24/BiodiversityClusterConfidence_Nov24.TIF")
+biodiv_cluster_conf <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Bio (Combined Biodiversity)/Confidence/BiodiversityClusterConfidence_Aug25.tif')
 
 ## Reduce resolution of confidence layer
-biodiv_conf.agg  <- aggregate(biodiv_conf, fact=5,fun = modal)
+biodiv_cluster_conf.agg  <- aggregate(biodiv_cluster_conf, fact=5,fun = modal)
 
-# stack
-r_conf_list <- list(biodiv_conf.agg)
-r_conf <- rast(r_conf_list)
-
-## Rename
-names(r_conf) <- c('CV')
-
-## Convert to stars object
-biodiv_conf_stars <- r_conf %>%
-  st_as_stars()
+## Remove raster to save space
+rm(biodiv_cluster_conf)
 
 ## Produce map
 pbio_conf <- ggplot() +
-  geom_stars(data = biodiv_conf_stars) +
-  scale_fill_gradientn(colors= brewer.pal(n = 5, name = "Greys"),na.value="transparent")+#Oranges
+  geom_spatraster(data = biodiv_cluster_conf.agg) +
+  scale_fill_gradientn(colors= brewer.pal(n = 5, name = "Greys"),na.value="transparent",name = "Confidence")+#Oranges
   geom_sf(data=countries, fill ="black",col ="black")+
   coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
-  xlab("Longitude")+
-  ylab("Latitude")+
   theme_bw(base_size = 10)+
   theme(legend.background=element_blank(),legend.text = element_text(color="white",size= 12))+#make legend background transparent and text white
   theme(legend.position=c(0.9,0.2))+
-  theme(legend.title= element_blank())+
-  theme(
-    axis.title.x = element_text(colour = "white"),
-    axis.title.y = element_text(colour = "white"))+
-  theme(legend.title= element_blank())+
+  theme(legend.title = element_text(color = "white", size = 12))+
+  labs(fill = "Confidence")+
+  theme(axis.title.x = element_text(colour = "white"),
+        axis.title.y = element_text(colour = "white"))+
   labs(x="Longitude",y="Latitude")+
   theme(plot.margin = unit(c(0,0.2,0,0), "cm"),legend.key.size = unit(0.8, "cm"))+
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 pbio_conf
 
-## Save Figure 4
+## Save Figure S5
 ggsave(plot = pbio_conf,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S7.png"),
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S5.png"),
        height = 195, width =195,units = "mm", dpi = 500,
        device = "png",limitsize = FALSE,bg="white")#height = 65, width =180,
-
-
 #_______________________________________________________________________________
-#### MAP RARE TAXA WITHIN 3 MOST DIVERSE CLUSTER GROUPS (SUPPLEMENTARY FIGURE S8) ####
+#### MAP RARE TAXA WITHIN 3 MOST DIVERSE CLUSTER GROUPS (SUPPLEMENTARY FIGURE S6) ####
 
-## Start with the biodiversity cluster raster
-biodiv <- rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Biodiversity_Cluster_Nov24/BiodiversityClusterMaxClass_Nov24.tif")
-
-plot(biodiv)
-class(biodiv)
-############
-## Create a copy of biodiv raster
-biodiv2 <- biodiv
-## Remove unwanted groups
-biodiv2[biodiv2 == 3] <- NA
-biodiv2[biodiv2 == 4] <- NA
-biodiv2[biodiv2 == 5] <- NA
-biodiv2[biodiv2 == 7] <- NA
-biodiv2[biodiv2 == 8] <- NA
-plot(biodiv2)
-###############
 ## Load packages
 library(terra)
+library(tidyterra)
 library(colorRamps)
 library(ggplot2)
+library(sf)
+library(ggpubr)
+
+## Bring in countries polygon
+countries <- st_read(file.path("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\EuropeLiteScoWal.shp"))
+
+## Load biodiversity cluster raster
+biodiv <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Bio (Combined Biodiversity)/Model/BiodiversityClusterMaxClass_Aug25.tif')
+
+## Plot raster
+plot(biodiv)
+class(biodiv)# Spatraster
+
+## Create a copy of biodiv raster
+biodiv2 <- biodiv
+
+## Remove unwanted groups. Top 3 groups are 2, 8 and 5
+biodiv2[biodiv2 == 1] <- NA
+biodiv2[biodiv2 == 4] <- NA
+biodiv2[biodiv2 == 6] <- NA
+biodiv2[biodiv2 == 7] <- NA
+biodiv2[biodiv2 == 3] <- NA
+plot(biodiv2)
 
 ## Convert raster to polygon
 p2 = as.polygons(biodiv)
 class(p2)
-cols2 <- c("#6FD326","#37C331","#D1D189","#E2E256","#F3F223","#E0F210", "#A8E21B", "#C0C1BC" )#ordered 1:8#
+
+## Set colours
+cols2 <- c( "#E0F210",
+            "#37C331",
+            "#C0C1BC",
+            "#F3F223",
+            "#A8E21B",
+            "#E2E256",
+            "#D1D189",
+            "#6FD326"
+           )#ordered 1:8#
 plot(p2, col=cols2) 
 
-## Subset
-rare_1 <- subset(p2, p2$BiodiversityClusterMaxClass_Nov24 == 1)
-rare_2 <- subset(p2, p2$BiodiversityClusterMaxClass_Nov24 == 2)
-rare_6 <- subset(p2, p2$BiodiversityClusterMaxClass_Nov24 == 6)
-rare_top3 <- subset(p2, p2$BiodiversityClusterMaxClass_Nov24 == 1 | p2$BiodiversityClusterMaxClass_Nov24 == 2 | p2$BiodiversityClusterMaxClass_Nov24 == 6)
+## Subset for top 3 biodiv clusters
+rare_1 <- subset(p2, p2$BiodiversityClusterMaxClass_Aug25 == 2)
+rare_2 <- subset(p2, p2$BiodiversityClusterMaxClass_Aug25 == 8)
+rare_6 <- subset(p2, p2$BiodiversityClusterMaxClass_Aug25 == 5)
+rare_top3 <- subset(p2, p2$BiodiversityClusterMaxClass_Aug25 == 2 | p2$BiodiversityClusterMaxClass_Aug25 == 8 | p2$BiodiversityClusterMaxClass_Aug25 == 5)
 plot(rare_top3)
 
 ## Load rare species layer
-g_rare<- rast("C:/Users/KMC00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/g_rare.tif")
+g_rare <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/γ rare/Model/g_rare_Mean_SQ_2025.tif')
 plot(g_rare)
 
 ## Plot the rare taxa layer
@@ -3161,7 +3140,7 @@ ggplot() +
 ## Cut out a geographic subset
 rare_top3_crop <- terra::crop(g_rare, rare_top3, mask=TRUE)
 
-## Plot rare taxa within cluster group area '2'
+## Plot rare taxa within top 3 biodiv clusters
 rare_top3_crop_map<-ggplot() +
   geom_spatraster(data = rare_top3_crop) +
   scale_fill_gradientn(colors= matlab.like(50),na.value="transparent")+
@@ -3184,16 +3163,16 @@ rare_top3_crop_map<-ggplot() +
 
 rare_top3_crop_map
 
-
 ## Make cluster a factor
 values(biodiv2) <- as.factor(values(biodiv2))
-## Raster Map of top 3 clusters (2,1,7)
+
+## Raster map of top 3 clusters (2,8, 5 or Bio-A, Bio-B, Bio-C)
 rare_top3_map <-ggplot() +
-  #geom_sf(data = rare_2,fill ="#37C331",col ="#37C331") +
-   #geom_sf(data = rare_1,fill ="#6FD326",col ="#6FD326") +
-   #geom_sf(data = rare_7,fill ="#A8E21B",col ="#A8E21B") +
   geom_spatraster(data = biodiv2) +
-  scale_fill_manual(values = c("#6FD326","#37C331","#A8E21B","white"),name="Cluster", na.translate = F)+
+  scale_fill_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
+     "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
+     labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
+     na.value="transparent")+ 
   geom_sf(data=countries, fill ="black",col ="black")+
   coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
   xlab("Longitude")+
@@ -3201,9 +3180,6 @@ rare_top3_map <-ggplot() +
   theme_bw(base_size = 20)+
   theme(legend.background=element_blank(),legend.text = element_text(color="white",size= 18))+
   theme(legend.position=c(0.9,0.21))+
-  scale_fill_manual(breaks = c('1','2','6','7','5','3','4','8'), values = c(
-     "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),na.value="transparent")+
-  #scale_fill_manual(breaks = c("2"), values = c("#37C331"),na.value="transparent")+
   theme(axis.title.x = element_text(colour = "black"))+
   labs(x="Longitude",y="Latitude")+
   theme(plot.margin = unit(c(0,0.4,0,1), "cm"),legend.key.size = unit(1, "cm"))+#t, r, b, l
@@ -3211,18 +3187,13 @@ rare_top3_map <-ggplot() +
         axis.title.y=element_blank(),
         axis.title.x=element_blank(),
         #axis.text.x=element_text(colour = "white"),
-        panel.grid.minor = element_blank())#+
-  #theme(legend.position = "none")
+        panel.grid.minor = element_blank())
 
-
+rare_top3_map
 
 ## Stitch above 2 plots into a single row
 sep_cluster_stitch <- egg::ggarrange(rare_top3_map,rare_top3_crop_map, labels = c("a)","b)"),nrow=1,label.args = list(gp = grid::gpar(font = 4, cex =
 2)))#ggpubr
-
-
-#library(cowplot)
-#sep_cluster_stitch <- plot_grid(rare_top3_map,rare_top3_crop_map,labels = c("a)", "b)"), nrow=1)
 
 ## Add annotations
 figureS5 <- annotate_figure(
@@ -3237,12 +3208,53 @@ figureS5 <- annotate_figure(
 
 ## Save final plot
 ggsave(plot = figureS5,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S7.png"),
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S6.png"),
        height = 260, width =520, units = "mm", dpi = 500,
        device = "png",limitsize = FALSE,bg="white")#width =285
 
 #_______________________________________________________________________________
-#### RASTER PREDICTORS 'BEST' EXPLINING BIODIVERSITY CLUSTER PATTERNS (SUPPLEMENTARY FIGURE S2) 
+#### IDENTIFY SPATIAL RESOLUTION OF MODELS ####
+
+#Load packages
+library(raster)
+library(terra)
+library(tidyterra)
+library(viridis)
+library(ggplot2)
+library(colorRamps)
+library(ggpubr)
+require(grid)
+
+## Load rasters
+gravel<- rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/Predicted_Gravel_Fraction.TIF")
+
+## Get approximate longitude of raster center
+lon_center <- (xmin(gravel) + xmax(gravel)) / 2
+
+## Compute UTM zone automatically
+utm_zone <- floor((lon_center + 180) / 6) + 1
+
+## Build UTM CRS string
+utm_crs <- paste0("+proj=utm +zone=", utm_zone, " +datum=WGS84 +units=m")
+
+## Create a template raster in projected CRS
+# We'll keep roughly the same resolution as the original (converted to meters)
+# Approximate conversion: 1 degree ≈ 111,000 meters
+res_m <- res(gravel) * 111000  # rough conversion for lon/lat to meters
+
+## convert SpatRaster → RasterLayer
+gravel_r <- raster(gravel)  # convert SpatRaster → RasterLayer
+r_template <- raster(extent(gravel_r), crs=utm_crs)
+res(r_template) <- res_m
+
+## Reproject raster safely
+# Use 'bilinear' for continuous data, 'ngb' for categorical
+r_utm <- projectRaster(gravel_r, r_template, method="bilinear")
+
+## Check the resolution in meters
+res(r_utm)
+#_______________________________________________________________________________
+#### RASTER PREDICTORS 'BEST' EXPLINING BIODIVERSITY CLUSTER PATTERNS (SUPPLEMENTARY FIGURE S7) ####
 
 #Load packages
 library(raster)
@@ -3256,25 +3268,19 @@ require(grid)
 
 ## Load rasters
 Current_Sp<- rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/Current_Sp.tif")
-SPM_SUMMER<- rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/SPM_SUMMER.tif")
 gravel<- rast("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/ModellingData/RasterPredictorsDec2024/Predicted_Gravel_Fraction.TIF")
 
 ## Update names
 names(gravel)<-'Gravel'
-#names(mud)<-'Mud'
-names(SPM_SUMMER)<-'SPM_SUMMER'
-#names(wov)<-'WOV'
 
 ## Make gravel data a percentage
 gravel=gravel*100
 
-## Identify colours and breaks
-#colors <- viridis(7)
+## Define breaks
 breaks <- c(0, 5, 10, 20, 30, 40,50,60,70,80,90, 100)
 
-
-label1 = "Gravel %"#"~alpha~ q == 1"
-
+## Plot label
+label1 = "Gravel"#"~alpha~ q == 1"
 
 ## Gravel raster plot
 gravel_rast <- ggplot() +
@@ -3299,54 +3305,19 @@ gravel_rast <- ggplot() +
            size=12,
           colour = "#707070",
           # fontface="bold",
-           x = -8,
-           y = 59.8
+           x = -9,
+           y = 60.15
           )+
   guides(fill=guide_legend(title="%"))
 gravel_rast
 
-
-## Identify colours and breaks
-#colors2 <- viridis(9)
-breaks2 <- c(0,1, 2,5, 10, 20, 30, 40, 100)
-
-label2 = "Summer SPM"#"~alpha~ q == 1"
-
-## SPM raster plot
-SPM_SUMMER_rast <- ggplot() +
-  geom_spatraster(data = SPM_SUMMER) +
-  scale_fill_viridis_b(breaks = breaks2, option = "C", na.value = "transparent") +
-  coord_sf(xlim = c(-10, 9), ylim = c(49, 60)) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  theme_bw(base_size = 30) +
-   theme(legend.background=element_blank(),legend.text = element_text(color="black",size= 18))+#make legend background transparent and text white
-  theme(plot.margin = unit(c(0,0.2,0,0), "cm"),legend.key.size = unit(1,"cm"))+#t, r, b, l
-  theme(legend.position=c(0.87,0.2))+#  # Adjust the position as needed
-   theme(
-    axis.title.y=element_blank(),
-    axis.text.y=element_text(colour = "white"))+
-    theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())+
-  annotate(geom = "text",
-           label = label2,
-           #parse = TRUE,
-           size=12,
-          colour = "#707070",
-          # fontface="bold",
-           x = -8,
-           y = 59.8
-          )+
-  guides(fill=guide_legend(title=expression(mg~m^{-3})))
-SPM_SUMMER_rast
-
-## Identify colours and breaks
-#colors3 <- viridis(14)
+## Define breaks for Current speed
 breaks3 <- c(0,0.2,0.4,0.6,0.8,1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6)
 
+## Plot label
 label3 = "Current speed"#"~alpha~ q == 1"
 
-## SPM raster plot
+## Current speed raster plot
 Current_Sp_rast <- ggplot() +
   geom_spatraster(data = Current_Sp) +
   scale_fill_viridis_b(breaks = breaks3, option = "C", na.value = "transparent") +
@@ -3369,13 +3340,13 @@ Current_Sp_rast <- ggplot() +
           colour = "#707070",
           # fontface="bold",
            x = -8,
-           y = 59.8
+           y = 60.15
           )+
-  guides(fill=guide_legend(title=expression(mg~ms^{-1})))
+  guides(fill=guide_legend(title=expression(m~s^{-1})))
 Current_Sp_rast
 
 ## Stitch plots together
-var_rast <-ggarrange(gravel_rast+ rremove("xlab"),SPM_SUMMER_rast+ rremove("xlab"),Current_Sp_rast+ rremove("xlab"), ncol = 3, nrow = 1,
+var_rast <-ggpubr::ggarrange(gravel_rast+ rremove("xlab"),Current_Sp_rast+ rremove("xlab"), ncol = 2, nrow = 1,
           labels = c("", "",""),
           font.label = list(size = 30, color = "black"))
 
@@ -3386,8 +3357,8 @@ var_rast2 <- annotate_figure(var_rast,
 
 ## Save plot
 ggsave(plot = var_rast2,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_s2.png"),
-       height = 350, width =1100, units = "mm", dpi = 500,
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S7.png"),
+       height = 350, width =700, units = "mm", dpi = 500,
        device = "png",limitsize = FALSE,bg="white")#width =285
 #_______________________________________________________________________________
 ####  CONFIDENCE MAPS FOR BIODIV METRIC PLOTS FROM FIGURE 2 (SUPPLEMENTARY FIGURE S6) 
@@ -3417,16 +3388,13 @@ countries <- st_read(file.path("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D0 Alpha confidence ####
 
 ## Load model raster
-a_q0_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\sample_a_q0_CV_SQ.tif')
+a_q0_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/0Dα (Hill 0, Alpha)/Confidence/sample_a_q0_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 a_q0_model_agg <- aggregate(a_q0_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(a_q0_model)
-
-## Facet names
-hum_names <- as_labeller(c(`S` = "S"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 =  "{}^{0}~italic(D)[italic(α)]" #
@@ -3464,16 +3432,13 @@ theme(panel.grid.major = element_blank(),
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D0 Beta confidence ####
 
 ## Load raster layer
-b_q0_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\b_q0_CV_SQ.tif')
+b_q0_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/0Dβ (Hill 0, Beta)/Confidence/b_q0_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 b_q0_model_agg <- aggregate(b_q0_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(b_q0_model)
-
-## Facet names
-hum_names <- as_labeller(c(`S` = "S"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{0}~italic(D)[italic(β)]"# "~beta~ q == 0"
@@ -3511,16 +3476,13 @@ theme(panel.grid.major = element_blank(),
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D0 Gamma confidence ####
 
 ## Load raster layer
-g_q0_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\g_q0_CV_SQ.tif')
+g_q0_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/0Dγ (Hill 0, Gamma)/Confidence/g_q0_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 g_q0_model_agg <- aggregate(g_q0_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(g_q0_model)
-
-## Facet names
-hum_names <- as_labeller(c(`S` = "S"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 ="{}^{0}~italic(D)[italic(γ)]" # "~gamma~ q == 0"
@@ -3558,17 +3520,13 @@ D0_gamma <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D1 alpha confidence ####
 
 ## Load raster layer
-a_q1_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\sample_a_q1_CV_SQ.tif')
+a_q1_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/1Dα (Hill 1, Alpha)/Confidence/sample_a_q1_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 a_q1_model_agg <- aggregate(a_q1_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(a_q1_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{1}~italic(D)[italic(α)]"#"~alpha~ q == 1"
@@ -3605,17 +3563,13 @@ D1_alpha <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D1 beta confidence ####
 
 ## Load model raster D1 beta
-b_q1_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\b_q1_CV_SQ.tif')
+b_q1_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/1Dβ (Hill 1, Beta)/Confidence/b_q1_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 b_q1_model_agg <- aggregate(b_q1_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(b_q1_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{1}~italic(D)[italic(β)]" # "~beta~ q == 1"
@@ -3653,17 +3607,13 @@ D1_beta <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D1 gamma confidence ####
 
 ## Load raster
-g_q1_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\g_q1_CV_SQ.tif')
+g_q1_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/1Dγ (Hill 1, Gamma)/Confidence/g_q1_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 g_q1_model_agg <- aggregate(g_q1_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(g_q1_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{1}~italic(D)[italic(γ)]"# "~gamma~ q == 0"
@@ -3701,17 +3651,13 @@ D1_gamma <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D2 alpha confidence ####
 
 ## Load raster
-a_q2_model <-  rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\sample_a_q2_CV_SQ.tif')
+a_q2_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/2Dα (Hill 2, Alpha)/Confidence/sample_a_q2_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 a_q2_model_agg <- aggregate(a_q2_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(a_q2_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{2}~italic(D)[italic(α)]" #"~alpha~ q == 2"
@@ -3748,17 +3694,13 @@ D2_alpha <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D2 beta confidence ####
 
 ## Load model raster D2 beta
-b_q2_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\b_q2_CV_SQ.tif')
+b_q2_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/2Dβ (Hill 2, Beta)/Confidence/b_q2_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 b_q2_model_agg <- aggregate(b_q2_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(b_q2_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 ="{}^{2}~italic(D)[italic(β)]" # "~beta~ q == 2"
@@ -3796,17 +3738,13 @@ D2_beta <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D2 gamma confidence ####
 
 ## Load raster
-g_q2_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\g_q2_CV_SQ.tif')
+g_q2_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/2Dγ (Hill 2, Gamma)/Confidence/g_q2_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 g_q2_model_agg <- aggregate(g_q2_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(g_q2_model)
-
-## Facet names
-hum_names <- as_labeller(
-  c(`N` = "N"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "{}^{2}~italic(D)[italic(γ)]" #"~gamma~ q == 2"
@@ -3844,7 +3782,7 @@ D2_gamma <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: N AV confidence ####
 
 ## Load raster
-av_count_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\av_count_CV_SQ.tif')
+av_count_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/N (Abund)/Confidence/av_count_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 av_count_model_agg <- aggregate(av_count_model, fact=7,fun = modal)
@@ -3852,11 +3790,9 @@ av_count_model_agg <- aggregate(av_count_model, fact=7,fun = modal)
 ## Remove raster to save space
 rm(av_count_model)
 
-## Facet names
-hum_names <- as_labeller(c(`gamma` = "γ"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
-
 ## Annotate label
-label1 = "italic(N[av])"##"N~alpha" "~av~count"
+#label1 = "italic(N[av])"##"N~alpha" "~av~count"
+label1 = "italic(N)"
 
 ## Model plot
 av_count_map <- ggplot() +
@@ -3889,16 +3825,13 @@ av_count_map <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: N CV confidence ####
 
 ## Load raster
-cv_count_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\cv_count_CV_SQ.tif')
+cv_count_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Ncv (Abund cv)/Confidence/cv_count_CV_SQ_2025.tif')
 
 ## Reduce size of raster
 cv_count_model_agg <- aggregate(cv_count_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(cv_count_model)
-
-## Facet names
-hum_names <- as_labeller(c(`gamma` = "γ"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "italic(N[cv])"#"~cv~count"
@@ -3935,16 +3868,13 @@ cv_count_map <- ggplot() +
 #### MAP BIODIVERSITY METRICS CONFIDENCE: N TOT confidence ####
 
 ## Load raster
-tot_count_model <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\DiversityModelResults_NOV2024\\tot_count_CV_SQ.tif')
+tot_count_model <- rast('C:/Users/kmc00/OneDrive - CEFAS/POSIDEN/POSEIDON RASTERS FOR AGE UPLOAD/Biodiversity paper/Ntot (Abund total)/Confidence/tot_count_CV_SQ.tif')
 
 ## Reduce size of raster
 tot_count_model_agg <- aggregate(tot_count_model, fact=7,fun = modal)
 
 ## Remove raster to save space
 rm(gamma_model)
-
-## Facet names
-hum_names <- as_labeller(c(`gamma` = "γ"))#,`alpha` = "α",`beta` = "β", `gamma` = "γ"
 
 ## Annotate label
 label1 = "italic(N[tot])"#"~tot~count"
@@ -3978,7 +3908,7 @@ tot_count_map <- ggplot() +
   theme(panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank())
 #_______________________________________________________________________________
-#### MAP BIODIVERSITY METRICS CONFIDENCE: STITCH CONFIDENCE PLOTS TOGETHER (FIGURE S6) ####
+#### MAP BIODIVERSITY METRICS CONFIDENCE: STITCH CONFIDENCE PLOTS TOGETHER (FIGURE S3) ####
 
 ## Create each row
 D0_stitch <- egg::ggarrange(D0_alpha, D0_beta, D0_gamma, labels = c("", "",""),nrow=1)#ggpubr
@@ -3987,11 +3917,11 @@ D2_stitch <- egg::ggarrange(D2_alpha, D2_beta, D2_gamma, labels = c("", "",""),n
 N_stitch <- egg::ggarrange(av_count_map,cv_count_map,tot_count_map, labels = c("","",""),nrow=1)#ggpubr
 
 ## Combine rows
-figure2 <- ggpubr::ggarrange(D0_stitch,D1_stitch,D2_stitch,N_stitch,nrow=4,font.label=list(color="black",size=16,face='plain'),align="v",widths = c(0.5,0.5,0.5, 1))
+figures3 <- ggpubr::ggarrange(D0_stitch,D1_stitch,D2_stitch,N_stitch,nrow=4,font.label=list(color="black",size=16,face='plain'),align="v",widths = c(0.5,0.5,0.5, 1))
 
 ## Annotate
-fig2 <- annotate_figure(
-  figure2, 
+figs3 <- annotate_figure(
+  figures3, 
   bottom = text_grob("          Longitude", 
   color = "black", face = "plain", size = 16),#,
   left = text_grob("Latitude", 
@@ -3999,65 +3929,7 @@ fig2 <- annotate_figure(
 )
 
 ## Save plot
-ggsave(plot = fig2,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S5.png"),
+ggsave(plot = figs3,
+       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S3.png"),
        height = 400, width =320, units = "mm", dpi = 500,
-       device = "png",limitsize = FALSE,bg="white")#width =285
-#_______________________________________________________________________________
-#### MAP BIODIVERSITY CLUSTER CONFIDENCE: PLOT (FIGURE S7) ####
-
-## Load packages
-library(sf)
-library(dplyr)
-library(RColorBrewer)
-library(terra)
-library(raster)
-library(stars)
-library(ggplot2)
-library(colorRamps)
-library(terra)
-library(tidyterra)
-library(raster)
-library(dplyr)
-library(stars)
-library(ggplot2)
-library(colorRamps)
-library(climateStability)
-library(ggpubr)
-
-## Bring in countries polygon
-countries <- st_read(file.path("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\EuropeLiteScoWal.shp"))
-#_______________________________________________________________________________
-
-## Load raster
-biodiv_cluster_conf <- rast('C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\DATA\\Confidence_Sept24.tif')
-
-## Reduce size of raster
-biodiv_cluster_conf_agg <- aggregate(biodiv_cluster_conf, fact=7,fun = modal)
-
-## Remove raster to save space
-rm(biodiv_cluster_conf)
-
-## Model plot
-biodiv_cluster_conf_map <- ggplot() +
-  geom_spatraster(data = biodiv_cluster_conf_agg) +
-  scale_fill_gradientn(colors= brewer.pal(n = 5, name = "Greys"),na.value="transparent",name = "Confidence")+
-  geom_sf(data=countries, fill ="black",col ="black")+
-  coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
-  xlab("Longitude")+
-  ylab("Latitude")+
-  theme_bw(base_size = 12)+
-  theme(legend.background=element_blank(),legend.text = element_text(color="white",size= 12))+#make legend background transparent and text white
-  theme(legend.position=c(0.87,0.2))+#legend.position = "bottom","none"#legend.position = "bottom"
-  #theme(legend.title= element_blank())+
-  theme(legend.title= element_text(color="white"))+
-  theme(plot.margin = unit(c(0,0.2,0,0), "cm"),legend.key.size = unit(0.5, "cm"))+#t, r, b, l
-  theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
-
-
-## Save plot
-ggsave(plot = biodiv_cluster_conf_map,
-       filename = paste0("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_S7.png"),
-       height = 195, width =195, units = "mm", dpi = 500,
        device = "png",limitsize = FALSE,bg="white")#width =285
