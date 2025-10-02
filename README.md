@@ -1,1 +1,1 @@
-R script for paper: Cooper, K.M., Thompson, M.S.A., Bolam, S.G., Peach, C.M., Webb, T.J., Downie, A-L. 2025. Mapping benthic biodiversity to facilitate future sustainable development. Ecosphere (in prep).
+R scripts for paper: Cooper, K.M., Thompson, M.S.A., Bolam, S.G., Peach, C.M., Webb, T.J., Downie, A-L. 2025. Mapping benthic biodiversity to facilitate future sustainable development. Ecosphere (in press).
