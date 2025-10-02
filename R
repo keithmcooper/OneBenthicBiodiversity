@@ -17,7 +17,10 @@
 # (https://rconnect.cefas.co.uk/onebenthic_dataextractiongrabcore/)
 
 # This script includes code for running Random Forest models (a quick looksee),
-# but the accompanying file .R should be used for final modelling.
+# but the accompanying files: 
+#  ClusterModel_2025.R and
+#  ContinuousVariablesModel_2025.R 
+# should be used for final modelling.
 
 # Input data files for modelling are produced in this script and include:
 # biodiv_metrics_4_modelling.csv (BIODIV METRICS)
