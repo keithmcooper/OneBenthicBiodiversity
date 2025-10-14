@@ -2014,14 +2014,14 @@ metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='cv_count', na.rm 
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='tot_count', na.rm = TRUE)
 head(metric)
 #_______________________________________________________________________________
-## Calculate rare taxa metric (gamma 2 minus gamma 0)
+## Calculate rare taxa metric (gamma 2 / gamma 0 * 100)
 
 ## Select 
 metric <- biodiv9_mod %>% group_by(metric) %>% filter(metric=='g_q0' |metric=='g_q2' , na.rm = TRUE)
 dim(metric)#37370     5
 #View(metric )
 
-## Wide data format allowing gamma 0 to be subtracted from g_2.
+## Wide data format 
 library(tidyr)
 metric_wide <- spread(metric, metric, measurement)
 dim(metric_wide)# 21766     5
