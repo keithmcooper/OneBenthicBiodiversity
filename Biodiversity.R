@@ -27,6 +27,8 @@
 # biodiv_metric_rare_4_modelling.csv (RARE TAXA)
 # biodiv_cluster_4_modelling.csv (BIODIV CLUSTERS)
 
+# Noye, the biodiversity metric calculations were implemented using R code adapted from Thompson’s open-source script:
+#https://github.com/MurraySAThompson/biodiversity-estimation-across-spatial-scales-and-Hill-numbers
 #_______________________________________________________________________________
 #### GET DATA ####
 
