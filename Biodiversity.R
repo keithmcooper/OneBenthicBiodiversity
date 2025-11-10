@@ -1,6 +1,6 @@
 ################################################################################
 ####            MAPPING BENTHIC BIODIVERSITY TO FACILITATE FUTURE           ####
-####              SUSTAINABLE DEVELOPMENT (ECOSPHERE JOURNAL)               ####
+####              SUSTAINABLE DEVELOPMENT (ECOSPHERE)                       ####
 ################################################################################
 
 ## This script relates to the work in Cooper, K.M., Thompson, M.S.A., Bolam, S.G.,
