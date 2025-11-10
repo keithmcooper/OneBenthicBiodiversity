@@ -21,14 +21,16 @@
 #  ClusterModel_2025.R and
 #  ContinuousVariablesModel_2025.R 
 # should be used for final modelling.
+#
+# This script uses a set of functions (diversity_functions_MT.R) to calculate 
+# biodiversity metrics. The code in diversity_functions_MT.R is adapted from 
+# Murray Thompson’s open-source script:
+#https://github.com/MurraySAThompson/biodiversity-estimation-across-spatial-scales-and-Hill-numbers
 
 # Input data files for modelling are produced in this script and include:
 # biodiv_metrics_4_modelling.csv (BIODIV METRICS)
 # biodiv_metric_rare_4_modelling.csv (RARE TAXA)
 # biodiv_cluster_4_modelling.csv (BIODIV CLUSTERS)
-
-# Noye, the biodiversity metric calculations were implemented using R code adapted from Thompson’s open-source script:
-#https://github.com/MurraySAThompson/biodiversity-estimation-across-spatial-scales-and-Hill-numbers
 #_______________________________________________________________________________
 #### GET DATA ####
 
@@ -127,7 +129,7 @@ p= ggplot()+
   geom_point(data=counts,aes(longitude,latitude,col="blue"), size=0.15,show.legend = FALSE)+
   coord_map(xlim = c(-10.7, 4),ylim = c(48, 62)) +#set x,y limits of plot 
   theme_bw(base_size=24)+ 
-   guides(colour = guide_legend(override.aes = list(size=5)))+ # Change size of legend dots #(were too small) 
+  guides(colour = guide_legend(override.aes = list(size=5)))+ # Change size of legend dots #(were too small) 
   labs(x="Longitude",y="Latitude")+ 
   facet_wrap(~year) 
 p
@@ -449,7 +451,7 @@ final_df = counts %>%
          g_q1 = case_when(is.na(sample_a_q1) | is.na(b_q1) | n_samp <6 ~ NA, TRUE ~ g_q1),
          g_q2 = case_when(is.na(sample_a_q2) | is.na(b_q2) | n_samp <6 ~ NA, TRUE ~ g_q2),
          assemblage = file_name)
- 
+
 ## Check max values
 max(final_df$sample_a_q0, na.rm=T)
 colnames(final_df)
@@ -465,8 +467,8 @@ final_df_long = final_df %>%
                 b_q0, b_q1, b_q2,
                 g_q0, g_q1, g_q2) %>%
   tidyr::pivot_longer(cols= -c(longitude:sample),
-               names_to = "metric",
-               values_to = "measurement") %>%
+                      names_to = "metric",
+                      values_to = "measurement") %>%
   rename(X=longitude, Y=latitude, Sample=sample)
 
 ## Check data
@@ -527,7 +529,7 @@ library(sp)
 
 ## Long to wide format
 biodiv8_wide <- biodiv8 %>%
-pivot_wider(names_from = metric, values_from = measurement)
+  pivot_wider(names_from = metric, values_from = measurement)
 head(biodiv8_wide)
 
 ## Set coordinates
@@ -575,20 +577,20 @@ biodiv9 %>%
 
 ## Add medians (see results from previous step)
 biodiv9 <- biodiv9 %>%
-    mutate(median = case_when(
-      metric == 'sample_a_q0' ~ 33.8,
-      metric == 'sample_a_q1' ~ 17.7,
-      metric == 'sample_a_q2' ~ 9.67,
-      metric == 'b_q0' ~ 4.88,
-      metric == 'b_q1' ~ 6.62,
-      metric == 'b_q2' ~ 6.89,
-      metric == 'g_q0' ~ 168,
-      metric == 'g_q1' ~ 136,
-      metric == 'g_q2' ~ 98.6,
-      metric == 'tot_count' ~ 739,
-      metric == 'count' ~ 70,
-      metric == 'cv_count' ~0.858
-      ))
+  mutate(median = case_when(
+    metric == 'sample_a_q0' ~ 33.8,
+    metric == 'sample_a_q1' ~ 17.7,
+    metric == 'sample_a_q2' ~ 9.67,
+    metric == 'b_q0' ~ 4.88,
+    metric == 'b_q1' ~ 6.62,
+    metric == 'b_q2' ~ 6.89,
+    metric == 'g_q0' ~ 168,
+    metric == 'g_q1' ~ 136,
+    metric == 'g_q2' ~ 98.6,
+    metric == 'tot_count' ~ 739,
+    metric == 'count' ~ 70,
+    metric == 'cv_count' ~0.858
+  ))
 
 ## Find absolute difference between each value and the median
 biodiv9$abs_diff_med <-abs( biodiv9$median -biodiv9$measurement)
@@ -601,20 +603,20 @@ biodiv9 %>%
 
 ## Add MAD column
 biodiv9 <- biodiv9 %>%
-    mutate(mad = case_when(
-      metric == 'sample_a_q0' ~ 14.1,
-      metric == 'sample_a_q1' ~ 8.94,
-      metric == 'sample_a_q2' ~ 5.16,
-      metric == 'b_q0' ~ 1.25,
-      metric == 'b_q1' ~ 2.01,
-      metric == 'b_q2' ~ 2.41,
-      metric == 'g_q0' ~ 53.6,
-      metric == 'g_q1' ~ 42.9,
-      metric == 'g_q2' ~ 32.6,
-      metric == 'tot_count' ~ 371,
-      metric == 'count' ~ 51,
-      metric == 'cv_count' ~ 0.30
-      ))
+  mutate(mad = case_when(
+    metric == 'sample_a_q0' ~ 14.1,
+    metric == 'sample_a_q1' ~ 8.94,
+    metric == 'sample_a_q2' ~ 5.16,
+    metric == 'b_q0' ~ 1.25,
+    metric == 'b_q1' ~ 2.01,
+    metric == 'b_q2' ~ 2.41,
+    metric == 'g_q0' ~ 53.6,
+    metric == 'g_q1' ~ 42.9,
+    metric == 'g_q2' ~ 32.6,
+    metric == 'tot_count' ~ 371,
+    metric == 'count' ~ 51,
+    metric == 'cv_count' ~ 0.30
+  ))
 head(biodiv9)
 
 ## Find Modified Z-Score for each data value
@@ -799,23 +801,23 @@ library(GGally)
 
 ## Apply ggpairs function 
 p <- ggpairs(as.data.frame(biodiv9_trans_scale), columnLabels = c(
-"''^0*D[alpha]",
-"''^1*D[alpha]",
-"''^2*D[alpha]", 
-"''^0*D[beta]",
-"''^1*D[beta]", 
-"''^2*D[beta]",
-"''^0*D[gamma]", 
-"''^1*D[gamma]",
-"''^2*D[gamma]",
-"N",
-"N[cv]",
-"N[tot]"
+  "''^0*D[alpha]",
+  "''^1*D[alpha]",
+  "''^2*D[alpha]", 
+  "''^0*D[beta]",
+  "''^1*D[beta]", 
+  "''^2*D[beta]",
+  "''^0*D[gamma]", 
+  "''^1*D[gamma]",
+  "''^2*D[gamma]",
+  "N",
+  "N[cv]",
+  "N[tot]"
 ), labeller = 
-          label_parsed)
+  label_parsed)
 
 figure_s1 <- p + theme(text=element_text(size=14))+
-   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ## Save pairs plot
 ggsave(plot = figure_s1,
@@ -904,15 +906,15 @@ d1 <- dist(as.matrix(d))
 test2 <- d1%>% hclust %>% as.dendrogram %>%set("leaves_pch", 19) %>%  # node point type
   set("leaves_cex", 9) %>%  # node point size
   set("leaves_col", c( 
-"#C0C1BC",#3
-"#6FD326",#8
-"#37C331",#2
-"#A8E21B",#5
-"#F3F223",#4
-"#E2E256",#6
-"#E0F210",#1
-"#D1D189"#7
-)) %>%
+    "#C0C1BC",#3
+    "#6FD326",#8
+    "#37C331",#2
+    "#A8E21B",#5
+    "#F3F223",#4
+    "#E2E256",#6
+    "#E0F210",#1
+    "#D1D189"#7
+  )) %>%
   set("labels_cex",0.9)%>% 
   #set("labels", c('     3', '     8', '     2', '     5', '     4', '     6', '     1', '     7'))%>% 
   set("labels", c('     Bio-H', '     Bio-B', '     Bio-A', '     Bio-C', '     Bio-E', '     Bio-F', '     Bio-D', '     Bio-G'))%>%
@@ -921,9 +923,9 @@ test2 <- d1%>% hclust %>% as.dendrogram %>%set("leaves_pch", 19) %>%  # node poi
 ## Change dendrogram into a ggplot
 ggd1 <- as.ggdend(test2)
 dendrogram <-  ggplot(ggd1, horiz = T)+theme_classic(base_size = 16)+theme(axis.title.y=element_blank(),
-                                                               axis.text.y=element_blank(),
-                                                               axis.ticks.y=element_blank(),
-                                                              axis.line.y=element_blank())+labs(y='Height')
+                                                                           axis.text.y=element_blank(),
+                                                                           axis.ticks.y=element_blank(),
+                                                                           axis.line.y=element_blank())+labs(y='Height')
 dendrogram
 #_______________________________________________________________________________
 #### BIODIVERSITY CLUSTERS: ELBOW & DENDROGRAM (FIGURE 3) ####
@@ -1223,12 +1225,12 @@ image(seq_along(svals), 1, as.matrix(seq_along(svals)), col=colors,
 colors
 "#C0C1BC" "#D1D189" "#E2E256" "#F3F223" "#E0F210" "#A8E21B" "#6FD326" "#37C331"
 #_______________________________________________________________________________
-#### BIODIVERSITY CLUSTERS: GROUP CHARACTERISTICS CENTRES ONLY (TABLE 4) ####
+#### BIODIVERSITY CLUSTERS: GROUP CHARACTERISTICS CENTRES ONLY (FIGURE 5) ####
 
 ## Take just the centres for variables used in clustering
 col_scale_data <- data_wide_order[c(1,4,6,7,10,11,12),2:10]
 str(col_scale_data)
- 
+
 # Add total row (centres summed). Note these values used to set cluster colours.
 col_scale_data_new <- col_scale_data %>%
   bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~'Total')))
@@ -1248,7 +1250,7 @@ library(gt)
 
 ## Create table
 metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
-   sub_missing()%>%
+  sub_missing()%>%
   cols_align(
     align = c("center"),
     columns = c(2:9))%>%
@@ -1257,7 +1259,7 @@ metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
   tab_spanner(
     label = md("**Cluster**"),
     columns = c( '2','8','5','1','4','6','7','3'))%>%
-   data_color(
+  data_color(
     direction = "row",
     columns = c(2:9),
     rows = c(1:8),# rows to have white to gray shading (SD excluded)
@@ -1265,7 +1267,7 @@ metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
     palette = c(
       "white","#737373"),
     na_color = "white")%>%
- tab_style(
+  tab_style(
     style = list(
       cell_fill(color =  "#37C331")),
     location = list(
@@ -1295,18 +1297,18 @@ metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
       cell_fill(color = "#E2E256")),
     location = list(
       cells_column_labels(columns = c('6'))))%>%
-      tab_style(
+  tab_style(
     style = list(
       cell_fill(color =  "#D1D189")),
     location = list(
       cells_column_labels(columns = c('7'))))%>%
-   tab_style(
+  tab_style(
     style = list(
       cell_fill(color =  "#C0C1BC")),
     location = list(
       cells_column_labels(columns = c('3'))))%>%
-     cols_label(
-       metric = md("**Metric**"),
+  cols_label(
+    metric = md("**Metric**"),
     '1' = md("**Bio-D**"),
     '2' = md("**Bio-A**"),
     '3' = md("**Bio-H**"),
@@ -1315,7 +1317,7 @@ metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
     '6' = md("**Bio-F**"),
     '7' = md("**Bio-G**"),
     '8' = md("**Bio-B**"))%>%
-    tab_style(
+  tab_style(
     style = cell_borders(
       sides = c( "bottom"),
       color = "#d3d3d3",
@@ -1349,8 +1351,8 @@ metric.cluster8
 
 ## Save Response traits table in html
 metric.cluster8 %>%
- # gtsave("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_6.png", expand = 10)# save table as .png
- gtsave("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_6.html")# save in html (tabular) format
+  # gtsave("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_6.png", expand = 10)# save table as .png
+  gtsave("C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Figure_5.html")# save in html (tabular) format
 #_______________________________________________________________________________
 #### EXPLAINING PATTERNS: PREPARE RASTER DATA ####
 
@@ -1419,35 +1421,35 @@ plot(predictors)
 
 ## Update names for predictor variables
 names(predictors)=c(
-'Phytoplankton',
-'Bottom temp.',
-'Nitrate',
-'Current speed',
-'Valley depth',
-'Salinity range',
-'Diss. Iron',
-'Wave velocity',
-'Ch. network distance',
-'LS-factor',
-'Closed depressions'
-
-#'Bathymetry',
-#'Chlorophyll',
-#'CNBL',
-#'RSP',
-#'gravel',
-#'mud',
-#'Mean SPM',
-#'Summer SPM',
-#'Winter SPM',
-#'Diss. Oxygen',
-#'Nitrate',
-#'pH',
-#'Bottom temp. range',
-#'ph_range',
-#'Phosphate',
-#'chl_mean',
-#'KDPAR_mean_mean',
+  'Phytoplankton',
+  'Bottom temp.',
+  'Nitrate',
+  'Current speed',
+  'Valley depth',
+  'Salinity range',
+  'Diss. Iron',
+  'Wave velocity',
+  'Ch. network distance',
+  'LS-factor',
+  'Closed depressions'
+  
+  #'Bathymetry',
+  #'Chlorophyll',
+  #'CNBL',
+  #'RSP',
+  #'gravel',
+  #'mud',
+  #'Mean SPM',
+  #'Summer SPM',
+  #'Winter SPM',
+  #'Diss. Oxygen',
+  #'Nitrate',
+  #'pH',
+  #'Bottom temp. range',
+  #'ph_range',
+  #'Phosphate',
+  #'chl_mean',
+  #'KDPAR_mean_mean',
 )#"Sand",
 
 ## Unload extract function from tidyr package (otherwise it won't work)
@@ -1487,7 +1489,7 @@ pool <- dbPool(drv = dbDriver(dw$driver),
 
 ## Load sediment sieve data
 sed_data = dbGetQuery(pool,
-"
+                      "
   select 
 svs.sample_samplecode,
 sv.wentworth_id,
@@ -1673,18 +1675,18 @@ vifstep(bestPHY, th=2.5)
 
 ## Create new df for variable with VIF SCORES <2.5
 bestPHY2=subset(bestPHY, select = c(
-Phytoplankton,
-Bottom.temp.,
-Current.speed,
-Valley.depth,
-Salinity.range,
-Diss..Iron,
-Ch..network.distance,
-LS.factor,
-Closed.depressions,
-Gravel,
-Mud
-
+  Phytoplankton,
+  Bottom.temp.,
+  Current.speed,
+  Valley.depth,
+  Salinity.range,
+  Diss..Iron,
+  Ch..network.distance,
+  LS.factor,
+  Closed.depressions,
+  Gravel,
+  Mud
+  
 ))
 dim(bestPHY2)#1600 11
 #_______________________________________________________________________________
@@ -1730,7 +1732,7 @@ dim(bestBIO)#1599
 ## Check length of bestFAC
 length(bestFAC)#1599
 #_______________________________________________________________________________
-#### EXPLAINING PATTERNS: BIOENV (TABLE 7) ####
+#### EXPLAINING PATTERNS: BIOENV (TABLE 6) ####
 
 ## Run bioenv with the transformed faunal (df 'bestBIO') and the selected env variables
 #(df 'bestPHY2').
@@ -1801,9 +1803,9 @@ library(kableExtra)
 kable_table <- kable(res3[1:8,], escape=FALSE,format = "html",caption = "")%>%
   kable_styling()%>%
   row_spec(6,bold=T,hline_after = T)
-  
+
 # Save the kable table as an HTML file
-save_kable(kable_table, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_7.html")
+save_kable(kable_table, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBenthicHotSpots\\OUTPUTS\\Table_6.html")
 
 ## Create results table as .png
 
@@ -1825,7 +1827,7 @@ save_kable(kable_table, "C:\\Users\\KMC00\\OneDrive - CEFAS\\R_PROJECTS\\OneBent
 #  kable_styling()%>%
 #  row_spec(3,bold=T,hline_after = T)%>%
 #  save_kable(file = html_file)
- 
+
 ## Capture the screenshot of the HTML file
 #png_file <- "C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Table_8.png"
 #webshot(html_file, file = png_file)
@@ -1861,7 +1863,7 @@ adonis.res
 # 79.2% of the variation remains unexplained by the model
 # variables explain 20.8 % pf variation (gravel = 8.0%, phytoplankton = 6.7%, , mud = 3.1%, current speed =2.2%, LS-factor = 0.6%
 #_______________________________________________________________________________
-#### EXPLAINING PATTERNS: dbRDA ORDINATION (FIGURE 6) ####
+#### EXPLAINING PATTERNS: dbRDA ORDINATION (FIGURE 7) ####
 
 ## Load libraries
 library(ggplot2)
@@ -1916,41 +1918,41 @@ p <- ggplot() +
   geom_text_repel(data = explanatory_scores_df, aes(x = CAP1, y = -CAP2, label = custom_labels), color = "black", size = 5) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey") +
-   #scale_color_manual(values = colors, breaks = legend_order) +
+  #scale_color_manual(values = colors, breaks = legend_order) +
   ####
   
-
-scale_colour_manual(
-  breaks = c('2','8','5','1','4','6','7','3'),
-  values = c(
-    '2' = "#37C331",
-    '8' = "#6FD326",
-    '5' = "#A8E21B",
-    '1' = "#E0F210",
-    '4' = "#F3F223",
-    '6' = "#E2E256",
-    '7' = "#D1D189",
-    '3' = "#C0C1BC"
-  ),
-  labels = c(
-    '2' = "Bio-A",
-    '8' = "Bio-B",
-    '5' = "Bio-C",
-    '1' = "Bio-D",
-    '4' = "Bio-E",
-    '6' = "Bio-F",
-    '7' = "Bio-G",
-    '3' = "Bio-H"
-  ),
-  name = "Cluster",
-  na.value = "transparent",
-  na.translate = FALSE)+
+  
+  scale_colour_manual(
+    breaks = c('2','8','5','1','4','6','7','3'),
+    values = c(
+      '2' = "#37C331",
+      '8' = "#6FD326",
+      '5' = "#A8E21B",
+      '1' = "#E0F210",
+      '4' = "#F3F223",
+      '6' = "#E2E256",
+      '7' = "#D1D189",
+      '3' = "#C0C1BC"
+    ),
+    labels = c(
+      '2' = "Bio-A",
+      '8' = "Bio-B",
+      '5' = "Bio-C",
+      '1' = "Bio-D",
+      '4' = "Bio-E",
+      '6' = "Bio-F",
+      '7' = "Bio-G",
+      '3' = "Bio-H"
+    ),
+    name = "Cluster",
+    na.value = "transparent",
+    na.translate = FALSE)+
   theme_bw() +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-  legend.text = element_text(color = "black", size = 14),  # Increase text size
-  legend.title = element_text(color = "black", size = 16), # Optional: increase title siz
-) +
+        legend.text = element_text(color = "black", size = 14),  # Increase text size
+        legend.title = element_text(color = "black", size = 16), # Optional: increase title siz
+  ) +
   labs(color = "Cluster") +
   xlim(-2.5, 2.5) +
   ylim(-3, 2.5)+
@@ -1958,7 +1960,7 @@ scale_colour_manual(
 
 p
 # Save plot
-ggsave("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Figure_6.png", plot = p, width = 20, height = 20, units = "cm", dpi = 800)
+ggsave("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Figure_7.png", plot = p, width = 20, height = 20, units = "cm", dpi = 800)
 #_______________________________________________________________________________
 #### SPATIAL MODELLING OF INDIVIDUAL METRICS: RASTER PREDICTOR VARIABLES (QUICK LOOK) ####
 
@@ -2262,8 +2264,8 @@ D0_alpha <-  ggplot() +
            fontface="bold",
            x = -8.3,
            y = 59.7)+
-theme(panel.grid.major = element_blank(),
-                   panel.grid.minor = element_blank())
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D0 Beta ####
 
@@ -2303,10 +2305,10 @@ D0_beta <- ggplot() +
            size=6.3,
            colour = "#707070",
            fontface="bold",
-   x = -8.3,
+           x = -8.3,
            y = 59.7)+
-theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D0 Gamma ####
 
@@ -2349,7 +2351,7 @@ D0_gamma <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D1 alpha ####
 
@@ -2391,7 +2393,7 @@ D1_alpha <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D1 beta ####
 
@@ -2434,7 +2436,7 @@ D1_beta <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D1 gamma ####
 
@@ -2477,7 +2479,7 @@ D1_gamma <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D2 alpha ####
 
@@ -2519,7 +2521,7 @@ D2_alpha <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D2 beta ####
 
@@ -2562,7 +2564,7 @@ D2_beta <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: D2 gamma ####
 
@@ -2605,7 +2607,7 @@ D2_gamma <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: N ####
 
@@ -2646,7 +2648,7 @@ count_map <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: N CV ####
 
@@ -2688,7 +2690,7 @@ cv_count_map <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: N TOT ####
 
@@ -2729,7 +2731,7 @@ tot_count_map <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS: COMBINED PLOT (FIGURE 2) ####
 
@@ -2746,9 +2748,9 @@ figure2 <- ggpubr::ggarrange(D0_stitch,D1_stitch,D2_stitch,N_stitch,nrow=4,font.
 fig2 <- annotate_figure(
   figure2, 
   bottom = text_grob("          Longitude", 
-  color = "black", face = "plain", size = 16),#,
+                     color = "black", face = "plain", size = 16),#,
   left = text_grob("Latitude", 
-  color = "black", face = "plain", size = 16,rot = 90)
+                   color = "black", face = "plain", size = 16,rot = 90)
 )
 
 ## Save combined plot
@@ -3003,11 +3005,11 @@ values(biodiv.agg) <- as.factor(values(biodiv.agg))
 ## Produce map
 pbio <-ggplot() +
   geom_spatraster(data = biodiv.agg) +
-   scale_fill_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
-     "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
-     labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
-     na.value="transparent")+
-   geom_sf(data=countries, fill ="black",col ="black")+
+  scale_fill_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
+    "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
+    labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
+    na.value="transparent")+
+  geom_sf(data=countries, fill ="black",col ="black")+
   coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
   xlab("Longitude")+
   ylab("Latitude")+
@@ -3107,7 +3109,7 @@ cols2 <- c( "#E0F210",
             "#E2E256",
             "#D1D189",
             "#6FD326"
-           )#ordered 1:8#
+)#ordered 1:8#
 plot(p2, col=cols2) 
 
 ## Subset for top 3 biodiv clusters
@@ -3175,9 +3177,9 @@ values(biodiv2) <- as.factor(values(biodiv2))
 rare_top3_map <-ggplot() +
   geom_spatraster(data = biodiv2) +
   scale_fill_manual(breaks = c('2','8','5','1','4','6','7','3'), values = c(
-     "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
-     labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
-     na.value="transparent")+ 
+    "#37C331", "#6FD326" ,"#A8E21B", "#E0F210", "#F3F223","#E2E256",  "#D1D189",  "#C0C1BC" ),
+    labels = c('Bio-A','Bio-B','Bio-C','Bio-D','Bio-E','Bio-F','Bio-G','Bio-H'),
+    na.value="transparent")+ 
   geom_sf(data=countries, fill ="black",col ="black")+
   coord_sf(xlim = c(-10, 9),ylim = c(49, 60))+
   xlab("Longitude")+
@@ -3198,7 +3200,7 @@ rare_top3_map
 
 ## Stitch above 2 plots into a single row
 sep_cluster_stitch <- egg::ggarrange(rare_top3_map,rare_top3_crop_map, labels = c("a)","b)"),nrow=1,label.args = list(gp = grid::gpar(font = 4, cex =
-2)))#ggpubr
+                                                                                                                                        2)))#ggpubr
 
 ## Add annotations
 figureS5 <- annotate_figure(
@@ -3206,9 +3208,9 @@ figureS5 <- annotate_figure(
   #top = text_grob("     Cluster                                                          % Rare", 
   #color = "black", face = "bold", size = 24),
   bottom = text_grob("          Longitude", 
-  color = "black", face = "plain", size = 24),#,
+                     color = "black", face = "plain", size = 24),#,
   left = text_grob("Latitude", 
-  color = "black", face = "plain", size = 24,rot = 90)
+                   color = "black", face = "plain", size = 24,rot = 90)
 )
 
 ## Save final plot
@@ -3300,19 +3302,19 @@ gravel_rast <- ggplot() +
   theme(legend.position=c(0.87,0.2))+#  # Adjust the position as needed
   theme(panel.grid.major = element_blank(),
         axis.title.y=element_blank(),
-                     panel.grid.minor = element_blank())+
-   
+        panel.grid.minor = element_blank())+
+  
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())+
-      annotate(geom = "text",
+        panel.grid.minor = element_blank())+
+  annotate(geom = "text",
            label = label1,
            #parse = TRUE,
            size=12,
-          colour = "#707070",
-          # fontface="bold",
+           colour = "#707070",
+           # fontface="bold",
            x = -9,
            y = 60.15
-          )+
+  )+
   guides(fill=guide_legend(title="%"))
 gravel_rast
 
@@ -3330,35 +3332,35 @@ Current_Sp_rast <- ggplot() +
   xlab("Longitude") +
   ylab("Latitude") +
   theme_bw(base_size = 30) +
-   theme(legend.background=element_blank(),legend.text = element_text(color="black",size= 18))+#make legend background transparent and text white
+  theme(legend.background=element_blank(),legend.text = element_text(color="black",size= 18))+#make legend background transparent and text white
   theme(plot.margin = unit(c(0,0.2,0,0), "cm"),legend.key.size = unit(1,"cm"))+#t, r, b, l
   theme(legend.position=c(0.87,0.22))+#  # Adjust the position as needed
   theme(
     axis.title.y=element_blank(),
-      axis.text.y=element_text(colour = "white"))+
+    axis.text.y=element_text(colour = "white"))+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())+
+        panel.grid.minor = element_blank())+
   annotate(geom = "text",
            label = label3,
            #parse = TRUE,
            size=12,
-          colour = "#707070",
-          # fontface="bold",
+           colour = "#707070",
+           # fontface="bold",
            x = -8,
            y = 60.15
-          )+
+  )+
   guides(fill=guide_legend(title=expression(m~s^{-1})))
 Current_Sp_rast
 
 ## Stitch plots together
 var_rast <-ggpubr::ggarrange(gravel_rast+ rremove("xlab"),Current_Sp_rast+ rremove("xlab"), ncol = 2, nrow = 1,
-          labels = c("", "",""),
-          font.label = list(size = 30, color = "black"))
+                             labels = c("", "",""),
+                             font.label = list(size = 30, color = "black"))
 
 ## Add annotations
 var_rast2 <- annotate_figure(var_rast, 
-                    bottom = textGrob("Longitude", gp = gpar(cex =2)),
-                    left = textGrob("Latitude", rot = 90,gp = gpar(cex =2)))
+                             bottom = textGrob("Longitude", gp = gpar(cex =2)),
+                             left = textGrob("Latitude", rot = 90,gp = gpar(cex =2)))
 
 ## Save plot
 ggsave(plot = var_rast2,
@@ -3431,8 +3433,8 @@ D0_alpha <-  ggplot() +
            fontface="bold",
            x = -8.3,
            y = 59.7)+
-theme(panel.grid.major = element_blank(),
-                   panel.grid.minor = element_blank())
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D0 Beta confidence ####
 
@@ -3473,10 +3475,10 @@ D0_beta <- ggplot() +
            size=6.3,
            colour = "#707070",
            fontface="bold",
-   x = -8.3,
+           x = -8.3,
            y = 59.7)+
-theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D0 Gamma confidence ####
 
@@ -3520,7 +3522,7 @@ D0_gamma <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D1 alpha confidence ####
 
@@ -3563,7 +3565,7 @@ D1_alpha <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D1 beta confidence ####
 
@@ -3607,7 +3609,7 @@ D1_beta <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D1 gamma confidence ####
 
@@ -3651,7 +3653,7 @@ D1_gamma <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D2 alpha confidence ####
 
@@ -3694,7 +3696,7 @@ D2_alpha <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D2 beta confidence ####
 
@@ -3738,7 +3740,7 @@ D2_beta <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: D2 gamma confidence ####
 
@@ -3782,7 +3784,7 @@ D2_gamma <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: N AV confidence ####
 
@@ -3825,7 +3827,7 @@ av_count_map <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: N CV confidence ####
 
@@ -3868,7 +3870,7 @@ cv_count_map <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: N TOT confidence ####
 
@@ -3911,7 +3913,7 @@ tot_count_map <- ggplot() +
            x = -8.3,
            y = 59.7)+
   theme(panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())
 #_______________________________________________________________________________
 #### MAP BIODIVERSITY METRICS CONFIDENCE: STITCH CONFIDENCE PLOTS TOGETHER (FIGURE S3) ####
 
@@ -3928,9 +3930,9 @@ figures3 <- ggpubr::ggarrange(D0_stitch,D1_stitch,D2_stitch,N_stitch,nrow=4,font
 figs3 <- annotate_figure(
   figures3, 
   bottom = text_grob("          Longitude", 
-  color = "black", face = "plain", size = 16),#,
+                     color = "black", face = "plain", size = 16),#,
   left = text_grob("Latitude", 
-  color = "black", face = "plain", size = 16,rot = 90)
+                   color = "black", face = "plain", size = 16,rot = 90)
 )
 
 ## Save plot
