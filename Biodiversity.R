@@ -2164,7 +2164,7 @@ rf2 <- randomForest(model, data=train3)
 ## Produce plots 
 #varImpPlot(rf2)
 
-#png('OUTPUTS/STRUCTURE/variables_affecting_model_structure.png') # height=nrow(pr), width=ncol(pr) EFFECTS TRAITS
+#png('OUTPUTS/STRUCTURE/variables_affecting_model_structure.png') # height=nrow(pr), width=ncol(pr) 
 #varImpPlot(rf2)
 #dev.off()
 
