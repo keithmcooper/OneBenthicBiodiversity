@@ -1345,7 +1345,7 @@ metric.cluster8 <-  col_scale_data_new2%>%gt()%>%
       columns = metric))%>%
   fmt_markdown(columns = metric)#%>% 
 #tab_caption(caption = md("**"))
-##Table 6.** Biodiversity cluster group centres for metrics used in clustering.Shading  provides a  visual means of identifying highest (dark grey) and lowest (no shading) values by row. Column totals in bottom row are used for colouring.
+##Table 6.** Biodiversity cluster group centres for metrics used in clustering. Shading  provides a  visual means of identifying highest (dark grey) and lowest (no shading) values by row. Column totals in bottom row are used for colouring.
 ## View table
 metric.cluster8
 
