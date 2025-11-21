@@ -1964,7 +1964,7 @@ ggsave("C:/Users/kmc00/OneDrive - CEFAS/R_PROJECTS/OneBenthicHotSpots/OUTPUTS/Fi
 #_______________________________________________________________________________
 #### SPATIAL MODELLING OF INDIVIDUAL METRICS: RASTER PREDICTOR VARIABLES (QUICK LOOK) ####
 
-# This code is intended for a quick look-see. For final models and associated RF outputs (inc associated model confidence maps), use R script in file xx
+# This code is intended for a quick look-see. For final models and associated RF outputs (inc associated model confidence maps), use R script in file ContinuousVariablesModel_2025.R 
 
 ## Load packages
 library(raster)
